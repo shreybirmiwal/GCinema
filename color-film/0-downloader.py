@@ -66,6 +66,8 @@ def main() -> int:
         "outtmpl": str(output_dir / "%(title)s.%(ext)s"),
         "quiet": False,
         "no_warnings": False,
+        # Node.js is required to solve YouTube's JS signature challenge
+        "js_runtimes": ["node"],
     }
     if args.cookies_from_browser:
         ydl_opts["cookiesfrombrowser"] = (args.cookies_from_browser,)

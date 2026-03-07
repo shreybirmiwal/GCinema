@@ -4,7 +4,7 @@ pip install -r requirements.txt
 ```
 
 
-download video
+download video (requires Node.js for YouTube JS challenge solving)
 ```bash
-python3 0-downloader.py "https://youtu.be/_0a998z_G4g" --cookies-from-browser chrome
+python3 0-downloader.py "YOUR_YOUTUBE_URL" --cookies-from-browser safari
 ```
