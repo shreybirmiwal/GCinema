@@ -18,7 +18,7 @@ import sys
 import time
 from pathlib import Path
 
-import google.generativeai as genai
+from google import genai
 
 SYSTEM_PROMPT = """\
 You are an expert silent-film sound designer analyzing a video clip to recreate its full
@@ -57,14 +57,14 @@ Return ONLY the raw JSON object with no markdown fencing or extra commentary.
 """
 
 
-def upload_video(path: Path) -> genai.types.File:
+def upload_video(path: Path, client: genai.Client):
     print(f"Uploading {path} ...")
-    video_file = genai.upload_file(path=str(path))
+    video_file = client.files.upload(file=str(path))
 
     while video_file.state.name == "PROCESSING":
         print("  Waiting for Gemini to process video ...", end="\r")
         time.sleep(5)
-        video_file = genai.get_file(video_file.name)
+        video_file = client.files.get(name=video_file.name)
 
     if video_file.state.name != "ACTIVE":
         raise RuntimeError(f"File processing failed with state: {video_file.state.name}")
@@ -73,11 +73,10 @@ def upload_video(path: Path) -> genai.types.File:
     return video_file
 
 
-def analyze_video(video_file: genai.types.File, model_name: str) -> dict:
-    model = genai.GenerativeModel(model_name=model_name)
-    response = model.generate_content(
-        [video_file, SYSTEM_PROMPT],
-        request_options={"timeout": 300},
+def analyze_video(video_file, client: genai.Client, model_name: str) -> dict:
+    response = client.models.generate_content(
+        model=model_name,
+        contents=[video_file, SYSTEM_PROMPT],
     )
     raw = response.text.strip()
 
@@ -162,7 +161,7 @@ def main() -> int:
         print("Error: No API key provided. Set GEMINI_API_KEY or pass --api-key.", file=sys.stderr)
         return 1
 
-    genai.configure(api_key=api_key)
+    client = genai.Client(api_key=api_key)
 
     input_path = args.input.resolve()
     if not input_path.exists():
@@ -170,9 +169,9 @@ def main() -> int:
         return 1
 
     try:
-        video_file = upload_video(input_path)
+        video_file = upload_video(input_path, client)
         print(f"Analyzing with {args.model} ...")
-        data = analyze_video(video_file, args.model)
+        data = analyze_video(video_file, client, args.model)
     except json.JSONDecodeError as exc:
         print(f"Error: Gemini returned non-JSON output: {exc}", file=sys.stderr)
         return 1

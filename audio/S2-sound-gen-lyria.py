@@ -56,19 +56,6 @@ async def generate_music(
         http_options={"api_version": "v1alpha"},
     )
 
-    # Build weighted prompt list
-    weighted_prompts = [types.WeightedPrompt(text=prompt, weight=1.0)]
-
-    # Music generation config
-    music_config: dict = {"weighted_prompts": weighted_prompts}
-    if bpm:
-        music_config["bpm"] = bpm
-
-    config = types.LiveConnectConfig(
-        response_modalities=["AUDIO"],
-        music_generation_config=types.MusicGenerationConfig(**music_config),
-    )
-
     print(f"Connecting to lyria-realtime-exp ...")
     print(f"Prompt: {prompt[:120]}{'...' if len(prompt) > 120 else ''}")
     if bpm:
@@ -78,22 +65,19 @@ async def generate_music(
     frames_needed = SAMPLE_RATE * CHANNELS * SAMPLE_WIDTH * duration_sec
     collected = bytearray()
 
-    async with client.aio.live.connect(model="lyria-realtime-exp", config=config) as session:
+    async with client.aio.live.music.connect(model="lyria-realtime-exp") as session:
+        await session.set_weighted_prompts([types.WeightedPrompt(text=prompt, weight=1.0)])
+        if bpm:
+            await session.set_music_generation_config(types.LiveMusicGenerationConfig(bpm=bpm))
+        await session.play()
+
         print("Connected. Receiving audio...", end="", flush=True)
 
-        async for response in session:
-            # Audio arrives in server_content.audio_chunks or inline_data
-            if hasattr(response, "server_content") and response.server_content:
-                sc = response.server_content
-                if hasattr(sc, "audio_chunks") and sc.audio_chunks:
-                    for chunk in sc.audio_chunks:
+        async for response in session.receive():
+            if response.server_content and response.server_content.audio_chunks:
+                for chunk in response.server_content.audio_chunks:
+                    if chunk.data:
                         collected.extend(chunk.data)
-                elif hasattr(sc, "inline_data") and sc.inline_data:
-                    collected.extend(sc.inline_data.data)
-
-            # Also handle top-level data field (some SDK versions)
-            if hasattr(response, "data") and response.data:
-                collected.extend(response.data)
 
             pct = min(100, int(len(collected) / frames_needed * 100))
             print(f"\r  Buffering audio ... {pct:3d}%  ({len(collected)//1024} KB)", end="", flush=True)

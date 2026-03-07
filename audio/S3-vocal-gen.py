@@ -58,7 +58,7 @@ def generate_sfx(client, description: str, duration_sec: float) -> bytes:
     """Return MP3 bytes for a sound effect via ElevenLabs Sound Generation."""
     response = client.text_to_sound_effects.convert(
         text=description,
-        duration_seconds=min(duration_sec, 22.0),  # API max ~22 s
+        duration_seconds=max(0.5, min(duration_sec, 22.0)),  # API range: 0.5–22s
         prompt_influence=0.4,
     )
     return b"".join(response)

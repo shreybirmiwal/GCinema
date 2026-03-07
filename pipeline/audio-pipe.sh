@@ -6,7 +6,7 @@
 #
 # Examples:
 #   ./run.sh clip.mp4 AIza... sk-... final_audio.mp3
-#   ./run.sh clip.mp4 AIza... sk-...          # outputs audio_pipe_work/final_audio.mp3
+#   ./run.sh clip.mp4 AIza... sk-...          # outputs pipeline/output/audio/final_audio.mp3
 #
 # Optional env vars (instead of positional args):
 #   GEMINI_API_KEY, ELEVENLABS_API_KEY
@@ -30,8 +30,8 @@ fi
 
 # ---- Paths ---------------------------------------------------------------
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-AUDIO_DIR="$(cd "$SCRIPT_DIR/../../audio" && pwd)"
-WORK_DIR="$(pwd)/audio_pipe_work"
+AUDIO_DIR="$(cd "$SCRIPT_DIR/../audio" && pwd)"
+WORK_DIR="$SCRIPT_DIR/output/audio"
 mkdir -p "$WORK_DIR"
 
 MUSIC_PROMPT="$WORK_DIR/music_prompt.txt"
