@@ -17,7 +17,8 @@ from google import genai
 SYSTEM_PROMPT = (
     "Using the video attached, reason to create a comprehensive description of what occurs in the clip. "
     "The description should be detailed enough such that somebody could recreate a very similar scene "
-    "with just the text you provide. Include details on the objects, the actions, the audio / lip sync, etc"
+    "with just the text you provide. Include details on the objects, the actions, camera angles, lighting, "
+    "and visual composition. Do NOT include any audio, sound, or dialogue descriptions."
 )
 
 
