@@ -36,7 +36,7 @@ Do NOT mark:
 - Pans, tilts, or zooms within the same continuous shot
 - Object or character movement within a single shot
 
-Return ONLY a JSON object in this exact format, with no extra commentary:
+Return ONLY a JSON object in this exact format, with no extra commentary: We want only static scenes
 {
   "cuts": [4.2, 9.7, 14.1, 19.8]
 }
@@ -147,8 +147,8 @@ def main() -> int:
         help="Directory for output clips (default: same as input)",
     )
     parser.add_argument(
-        "--model", default="gemini-2.0-flash",
-        help="Gemini model to use (default: gemini-2.0-flash)",
+        "--model", default="gemini-3.1",
+        help="Gemini model to use (default: gemini-3.1)",
     )
     parser.add_argument(
         "--api-key", default=None,

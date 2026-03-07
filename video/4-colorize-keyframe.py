@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Colorize a black-and-white keyframe using Gemini image generation.
+Colorize a black-and-white keyframe using NanoBanana image generation.
 
-Optionally provide a previously-colored reference frame so Gemini can match
-the color style, palette, and background consistency.
+Keeps the prompt minimal to avoid over-saturation and hallucination.
+Primary signal is the previous colorized reference frame (if available).
 """
 
 import argparse
@@ -16,30 +16,18 @@ from google import genai
 from google.genai import types
 from PIL import Image
 
-MODEL = "gemini-2.0-flash-exp-image-generation"
+MODEL = "nanobanana-2"
 
-def build_prompt_no_ref(color_guide: str | None) -> str:
-    guide_section = f"\n\nMaster color guide for this film — follow it strictly:\n{color_guide}\n" if color_guide else ""
-    return (
-        "Colorize this black and white image. "
-        "Produce a realistic, natural colorization that preserves all original detail."
-        + guide_section
-        + " Output only the colorized image."
-    )
+PROMPT_NO_REF = (
+    "Add natural, realistic color to this black and white image. "
+    "Keep it subtle and grounded — do not over-saturate."
+)
 
-
-def build_prompt_with_ref(color_guide: str | None) -> str:
-    guide_section = f"\n\nMaster color guide for this film — follow it strictly:\n{color_guide}\n" if color_guide else ""
-    return (
-        "The first image is a black and white frame that needs to be colorized. "
-        "The second image is an already-colored reference frame from the same scene. "
-        "Colorize the black and white image using the reference for style consistency: "
-        "match the color palette, skin tones, clothing colors, background colors, lighting mood, "
-        "and overall aesthetic of the reference. "
-        "Preserve all original detail from the black and white frame."
-        + guide_section
-        + " Output only the colorized image."
-    )
+PROMPT_WITH_REF = (
+    "Add natural, realistic color to the first image (black and white). "
+    "Use the second image as a reference for color style, palette, "
+    "skin tones, clothing, and background consistency."
+)
 
 
 def load_image_part(path: Path) -> types.Part:
@@ -49,19 +37,22 @@ def load_image_part(path: Path) -> types.Part:
     return types.Part.from_bytes(data=buf.getvalue(), mime_type="image/jpeg")
 
 
-def colorize(client: genai.Client, bw_path: Path, ref_path: Path | None, model_name: str, color_guide: str | None = None) -> bytes:
-    parts = []
+def colorize(
+    client: genai.Client,
+    bw_path: Path,
+    ref_path: Path | None,
+    model_name: str,
+) -> bytes:
+    contents = [load_image_part(bw_path)]
     if ref_path:
-        parts.append(load_image_part(bw_path))
-        parts.append(load_image_part(ref_path))
-        parts.append(build_prompt_with_ref(color_guide))
+        contents.append(load_image_part(ref_path))
+        contents.append(PROMPT_WITH_REF)
     else:
-        parts.append(load_image_part(bw_path))
-        parts.append(build_prompt_no_ref(color_guide))
+        contents.append(PROMPT_NO_REF)
 
     response = client.models.generate_content(
         model=model_name,
-        contents=parts,
+        contents=contents,
         config=types.GenerateContentConfig(
             response_modalities=["IMAGE", "TEXT"],
         ),
@@ -71,12 +62,12 @@ def colorize(client: genai.Client, bw_path: Path, ref_path: Path | None, model_n
         if part.inline_data and part.inline_data.mime_type.startswith("image/"):
             return part.inline_data.data
 
-    raise RuntimeError("Gemini did not return an image in the response.")
+    raise RuntimeError("Model did not return an image in the response.")
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Colorize a B&W keyframe with Gemini."
+        description="Colorize a B&W keyframe with NanoBanana."
     )
     parser.add_argument(
         "input",
@@ -84,21 +75,13 @@ def main() -> int:
         help="Path to the black-and-white input image.",
     )
     parser.add_argument(
-        "--reference",
-        "-r",
+        "--reference", "-r",
         type=Path,
         default=None,
-        help="Path to an already-colored reference frame (optional, max 1).",
+        help="Path to a single already-colorized reference frame from the previous scene.",
     )
     parser.add_argument(
-        "--color-guide",
-        type=Path,
-        default=None,
-        help="Path to a master color guide text file for cross-scene consistency (optional).",
-    )
-    parser.add_argument(
-        "--output",
-        "-o",
+        "--output", "-o",
         type=Path,
         default=None,
         help="Path to write the colorized image (default: <input>_colorized.jpg).",
@@ -106,7 +89,7 @@ def main() -> int:
     parser.add_argument(
         "--model",
         default=MODEL,
-        help=f"Gemini model to use (default: {MODEL}).",
+        help=f"Model to use (default: {MODEL}).",
     )
     parser.add_argument(
         "--api-key",
@@ -134,24 +117,15 @@ def main() -> int:
             print(f"Error: Reference image not found: {ref_path}", file=sys.stderr)
             return 1
 
-    color_guide = None
-    if args.color_guide:
-        guide_path = args.color_guide.resolve()
-        if not guide_path.is_file():
-            print(f"Error: Color guide not found: {guide_path}", file=sys.stderr)
-            return 1
-        color_guide = guide_path.read_text(encoding="utf-8").strip()
-
     out_path = args.output or bw_path.parent / (bw_path.stem + "_colorized.jpg")
 
-    print(f"Input:       {bw_path}")
-    print(f"Reference:   {ref_path or '(none)'}")
-    print(f"Color guide: {'yes' if color_guide else '(none)'}")
-    print(f"Model:       {args.model}")
+    print(f"Input:     {bw_path}")
+    print(f"Reference: {ref_path or '(none)'}")
+    print(f"Model:     {args.model}")
     print("Colorizing ...")
 
     try:
-        image_bytes = colorize(client, bw_path, ref_path, args.model, color_guide)
+        image_bytes = colorize(client, bw_path, ref_path, args.model)
     except Exception as exc:
         print(f"Error: {exc}", file=sys.stderr)
         return 1

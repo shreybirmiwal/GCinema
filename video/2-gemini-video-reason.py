@@ -15,10 +15,13 @@ from pathlib import Path
 from google import genai
 
 SYSTEM_PROMPT = (
-    "Using the video attached, reason to create a comprehensive description of what occurs in the clip. "
-    "The description should be detailed enough such that somebody could recreate a very similar scene "
-    "with just the text you provide. Include details on the objects, the actions, camera angles, lighting, "
-    "and visual composition. Do NOT include any audio, sound, or dialogue descriptions."
+    "Describe what HAPPENS in this clip in 2-4 plain sentences. "
+    "Focus only on the people, animals, objects, and their actions — who does what, "
+    "where they are, what they interact with.\n\n"
+    "Do NOT mention: camera angles, shot composition, lighting, film techniques, "
+    "that it is black and white, or any audio/sound. "
+    "Do NOT use markdown, headers, or bullet points. "
+    "Just write plain sentences describing the scene action."
 )
 
 
@@ -68,8 +71,8 @@ def main() -> int:
     )
     parser.add_argument(
         "--model",
-        default="gemini-2.0-flash",
-        help="Gemini model to use (default: gemini-2.0-flash)",
+        default="gemini-3.1",
+        help="Gemini model to use (default: gemini-3.1)",
     )
     parser.add_argument(
         "--api-key",

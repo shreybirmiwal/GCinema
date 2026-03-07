@@ -1,46 +1,64 @@
 #!/usr/bin/env python3
 """
-Generate a master color guide for a film by analyzing its first frame.
+Generate a master color guide by having Gemini watch the ENTIRE film.
 
-Sends the first keyframe to Gemini and asks it to produce a detailed,
-specific color description that will be used to keep colorization
-consistent across all scenes in the pipeline.
+Uploads the full video to the Gemini Files API and prompts the model to
+produce a detailed, character- and object-specific color guide that will
+anchor every colorization call in the pipeline.
 """
 
 import argparse
 import os
 import sys
-import io
+import time
 from pathlib import Path
 
 from google import genai
-from google.genai import types
-from PIL import Image
 
-MODEL = "gemini-2.0-flash"
+MODEL = "gemini-3.1"
 
 COLOR_GUIDE_PROMPT = (
-    "Analyze this black and white film frame and create a master color guide "
-    "that will be used to consistently colorize every scene in this film.\n\n"
-    "For each thing you can identify, specify exact, actionable colors:\n"
-    "- Characters: skin tone, hair color, eye color, clothing colors and fabrics\n"
-    "- Environment: wall/floor colors, furniture, props, sky, outdoor elements\n"
-    "- Lighting: warm or cool, color temperature (e.g. golden afternoon, harsh white noon, soft blue dusk)\n"
-    "- Overall palette mood: e.g. desaturated and gritty, warm and nostalgic, high-contrast dramatic\n\n"
-    "Be specific — say 'dusty rose blouse' not 'pink shirt', 'warm olive complexion' not 'tan skin'. "
-    "This guide will anchor every colorization call so colors stay consistent across cuts and scenes. "
-    "Return only the color guide as plain descriptive text, no bullet headers or markdown."
+    "Watch this entire black-and-white film and produce a master color guide "
+    "that will be used to consistently colorize every scene.\n\n"
+    "For every recurring character, object, animal, and environment you can identify, "
+    "specify exact, actionable colors. Examples of the level of detail expected:\n"
+    "  - 'Main character (man in suit): charcoal grey pinstripe suit, white dress shirt, "
+    "burgundy tie, warm olive complexion, dark brown hair'\n"
+    "  - 'Lion: tawny orange-gold fur, pale cream belly, amber eyes'\n"
+    "  - 'Young woman: dusty rose blouse, navy skirt, fair rosy complexion, auburn hair'\n"
+    "  - 'Interior parlor: cream walls, mahogany furniture, Persian rug in deep reds and golds'\n"
+    "  - 'Exterior street: grey cobblestones, brown brick buildings, overcast cool daylight'\n\n"
+    "Also note the overall lighting mood for day/night/interior scenes and any "
+    "consistent color temperature (e.g. warm golden afternoons, cool blue nights).\n\n"
+    "Be specific — 'dusty rose' not 'pink', 'tawny orange-gold' not 'yellow'. "
+    "Return only the color guide as plain descriptive text, no markdown headers."
 )
+
+
+def upload_video(client: genai.Client, path: Path):
+    print(f"Uploading film: {path} ...")
+    video_file = client.files.upload(file=str(path))
+
+    while video_file.state.name == "PROCESSING":
+        print("  Waiting for Gemini to process video ...", end="\r")
+        time.sleep(5)
+        video_file = client.files.get(name=video_file.name)
+
+    if video_file.state.name != "ACTIVE":
+        raise RuntimeError(f"File processing failed with state: {video_file.state.name}")
+
+    print(f"\nUpload complete: {video_file.uri}")
+    return video_file
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Generate a master color guide from a film's first keyframe."
+        description="Generate a master color guide by analyzing the entire film video."
     )
-    parser.add_argument("input", type=Path, help="Path to the keyframe image (PNG/JPG)")
+    parser.add_argument("input", type=Path, help="Path to the film video (MP4)")
     parser.add_argument(
         "--output", "-o", type=Path, default=None,
-        help="Path to write the color guide text (default: <input>_color_guide.txt)",
+        help="Path to write the color guide text (default: color_guide.txt next to input)",
     )
     parser.add_argument(
         "--model", default=MODEL,
@@ -59,23 +77,19 @@ def main() -> int:
 
     input_path = args.input.resolve()
     if not input_path.is_file():
-        print(f"Error: Input image not found: {input_path}", file=sys.stderr)
+        print(f"Error: Input video not found: {input_path}", file=sys.stderr)
         return 1
 
-    out_path = args.output or input_path.parent / (input_path.stem + "_color_guide.txt")
+    out_path = args.output or input_path.parent / "color_guide.txt"
 
     client = genai.Client(api_key=api_key)
 
-    img = Image.open(input_path).convert("RGB")
-    buf = io.BytesIO()
-    img.save(buf, format="JPEG")
-    image_part = types.Part.from_bytes(data=buf.getvalue(), mime_type="image/jpeg")
-
-    print(f"Generating master color guide from: {input_path}")
     try:
+        video_file = upload_video(client, input_path)
+        print(f"Generating master color guide with {args.model} ...")
         response = client.models.generate_content(
             model=args.model,
-            contents=[image_part, COLOR_GUIDE_PROMPT],
+            contents=[video_file, COLOR_GUIDE_PROMPT],
         )
         guide = response.text.strip()
     except Exception as exc:
@@ -84,7 +98,7 @@ def main() -> int:
 
     out_path.write_text(guide, encoding="utf-8")
     print(f"Color guide saved to: {out_path}")
-    print(f"\n--- Color Guide Preview ---\n{guide[:300]}{'...' if len(guide) > 300 else ''}")
+    print(f"\n--- Color Guide Preview ---\n{guide[:500]}{'...' if len(guide) > 500 else ''}")
     return 0
 
 
