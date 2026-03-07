@@ -401,3 +401,14 @@ Each tool demonstrates a different capability of the multimodal stack:
 - audio generation
 - world modeling
 - interactive environments
+
+
+
+
+
+# prizes
+
+best: yc interview
+gemini: 
+
+can use geminit o also dub films in diff languages
