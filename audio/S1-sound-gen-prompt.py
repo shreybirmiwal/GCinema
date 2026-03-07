@@ -20,10 +20,26 @@ from pathlib import Path
 
 from google import genai
 
-SYSTEM_PROMPT = """\
+CHARACTER_PROMPT = """\
+You are analyzing a silent film clip. First, identify every character who appears.
+
+For each character return a JSON array where each object has:
+- "id": a short snake_case identifier (e.g. "charlie", "woman_in_hat")
+- "description": what they look like (e.g. "man in bowler hat and baggy trousers")
+- "gender": "male" or "female"
+- "role": one sentence on their role in this scene
+- "approximate_age": "child", "young_adult", "adult", or "elderly"
+
+Return ONLY the raw JSON array, no markdown fencing.
+"""
+
+AUDIO_PROMPT_TEMPLATE = """\
 You are an expert silent-film sound designer and dialogue writer restoring a classic silent film.
 This is a SILENT film — there is no audio. Your job is to INVENT the full soundscape AND dialogue
 that would bring this film to life, exactly as a 1920s sound restoration team would.
+
+The following characters appear in this clip:
+{character_list}
 
 Analyze the video carefully and return a JSON object with exactly two keys:
 
@@ -43,7 +59,9 @@ Analyze the video carefully and return a JSON object with exactly two keys:
    - "type": either "speech" (character vocal) or "sfx" (sound effect / foley)
 
    For type "speech":
-       - "character": brief description (e.g. "man in hat", "woman on left")
+       - "character_id": the character's id from the list above (e.g. "charlie", "woman_in_hat")
+       - "character": human-readable description (e.g. "Charlie", "Woman in hat")
+       - "gender": "male" or "female" (copy from the character list above — this is critical)
        - "utterance": INVENT a natural, expressive line of dialogue that fits the scene and
          emotion — based on facial expressions, body language, and context. This is a silent
          film restoration: you MUST write actual words, never use "..." or leave it blank.
@@ -57,12 +75,13 @@ Analyze the video carefully and return a JSON object with exactly two keys:
        - "confidence": "high", "medium", or "low"
 
    IMPORTANT for speech:
+   - Use the character list above to correctly assign gender — this determines the voice used
    - Watch every moment a character opens their mouth or shows strong emotion
    - Invent dialogue that matches their expression — excited, scared, funny, dramatic
    - Include exclamations, reactions, short sentences — keep each utterance under 10 words
    - Mark ALL invented speech as "high" or "medium" confidence
 
-   Be thorough — include footsteps, impacts, ambient circus sounds, crowd reactions,
+   Be thorough — include footsteps, impacts, ambient sounds, crowd reactions,
    object interactions, character exclamations, and full invented dialogue exchanges.
 
 Return ONLY the raw JSON object with no markdown fencing or extra commentary.
@@ -85,19 +104,38 @@ def upload_video(path: Path, client: genai.Client):
     return video_file
 
 
-def analyze_video(video_file, client: genai.Client, model_name: str) -> dict:
-    response = client.models.generate_content(
-        model=model_name,
-        contents=[video_file, SYSTEM_PROMPT],
-    )
-    raw = response.text.strip()
-
-    # Strip markdown fences if the model added them anyway
+def _parse_json(raw: str):
+    raw = raw.strip()
     if raw.startswith("```"):
         lines = raw.splitlines()
         raw = "\n".join(lines[1:-1] if lines[-1].strip() == "```" else lines[1:])
-
     return json.loads(raw)
+
+
+def identify_characters(video_file, client: genai.Client, model_name: str) -> list:
+    print("Pass 1: identifying characters...")
+    response = client.models.generate_content(
+        model=model_name,
+        contents=[video_file, CHARACTER_PROMPT],
+    )
+    characters = _parse_json(response.text)
+    for c in characters:
+        print(f"  [{c.get('gender','?')}] {c.get('id')} — {c.get('description')}")
+    return characters
+
+
+def analyze_video(video_file, client: genai.Client, model_name: str, characters: list) -> dict:
+    char_list = "\n".join(
+        f"- {c['id']} ({c['gender']}, {c.get('approximate_age','adult')}): {c['description']} — {c.get('role','')}"
+        for c in characters
+    )
+    prompt = AUDIO_PROMPT_TEMPLATE.format(character_list=char_list)
+    print("Pass 2: generating music prompt + audio events...")
+    response = client.models.generate_content(
+        model=model_name,
+        contents=[video_file, prompt],
+    )
+    return _parse_json(response.text)
 
 
 def pretty_print(data: dict) -> None:
@@ -182,8 +220,8 @@ def main() -> int:
 
     try:
         video_file = upload_video(input_path, client)
-        print(f"Analyzing with {args.model} ...")
-        data = analyze_video(video_file, client, args.model)
+        characters = identify_characters(video_file, client, args.model)
+        data = analyze_video(video_file, client, args.model, characters)
     except json.JSONDecodeError as exc:
         print(f"Error: Gemini returned non-JSON output: {exc}", file=sys.stderr)
         return 1

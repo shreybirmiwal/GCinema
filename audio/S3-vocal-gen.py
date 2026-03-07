@@ -31,6 +31,56 @@ from pathlib import Path
 from pydub import AudioSegment
 
 # ---------------------------------------------------------------------------
+# Voice assignment — consistent per character, gendered
+# ---------------------------------------------------------------------------
+
+# Pre-made ElevenLabs voice IDs
+FEMALE_VOICES = [
+    "21m00Tcm4TlvDq8ikWAM",  # Rachel
+    "EXAVITQu4vr4xnSDxMaL",  # Bella
+    "MF3mGyEYCl7XYWbV9V6O",  # Elli
+]
+MALE_VOICES = [
+    "pNInz6obpgDQGcFmaJgB",  # Adam
+    "ErXwobaYiN019PkySvjV",  # Antoni
+    "VR6AewLTigWG4xSOukaG",  # Arnold
+]
+
+FEMALE_KEYWORDS = {"woman", "female", "girl", "lady", "she", "her", "mrs", "miss", "ms"}
+MALE_KEYWORDS   = {"man", "male", "boy", "guy", "he", "him", "mr", "sir", "charlie", "chaplin"}
+
+_char_voice_cache: dict[str, str] = {}
+_female_idx = 0
+_male_idx = 0
+
+def pick_voice(character: str, gender: str | None = None) -> str:
+    """Return a consistent ElevenLabs voice ID for a character.
+    Uses explicit gender field if provided, otherwise infers from description keywords."""
+    global _female_idx, _male_idx
+    key = character.lower().strip()
+    if key in _char_voice_cache:
+        return _char_voice_cache[key]
+
+    if gender and gender.lower() == "female":
+        is_female = True
+    elif gender and gender.lower() == "male":
+        is_female = False
+    else:
+        words = set(key.replace(",", " ").replace("-", " ").split())
+        is_female = bool(words & FEMALE_KEYWORDS)
+
+    if is_female:
+        voice = FEMALE_VOICES[_female_idx % len(FEMALE_VOICES)]
+        _female_idx += 1
+    else:
+        voice = MALE_VOICES[_male_idx % len(MALE_VOICES)]
+        _male_idx += 1
+
+    _char_voice_cache[key] = voice
+    return voice
+
+
+# ---------------------------------------------------------------------------
 # ElevenLabs helpers
 # ---------------------------------------------------------------------------
 
@@ -103,8 +153,10 @@ def build_track(events: list[dict], duration_ms: int, voice: str, api_key: str) 
             if kind == "speech":
                 utterance = event.get("utterance", "")
                 char      = event.get("character", "character")
-                print(f"  [{i+1}/{len(events)}] TTS  \"{utterance}\" ({char}) @ {ts_ms/1000:.1f}s ...")
-                mp3 = generate_speech(client, utterance, voice)
+                gender    = event.get("gender")
+                char_voice = pick_voice(char, gender)
+                print(f"  [{i+1}/{len(events)}] TTS  \"{utterance}\" ({char}, {gender or '?'}) [voice:{char_voice[:8]}] @ {ts_ms/1000:.1f}s ...")
+                mp3 = generate_speech(client, utterance, char_voice)
             else:
                 desc     = event.get("description", "sound effect")
                 dur_hint = event.get("duration_sec", 2.0)
