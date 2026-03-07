@@ -2,12 +2,13 @@
 """
 Send a video clip to Gemini and generate:
   1. A music/audio composition prompt describing what the soundtrack would likely sound like.
-  2. A lip-sync / dialogue transcript with timestamps for any spoken words, exclamations, etc.
+  2. A unified list of timestamped audio events: vocal sounds (speech/exclamations) AND
+     sound effects (foley, ambience, impacts, etc.) — feed into S3-vocal-gen.py.
 
 Outputs:
-  --output-music   plain-text music/audio prompt  (feed into S2-sound-gen-lyria.py)
-  --output-lipsync JSON array of timestamped vocal moments
-  --output         combined JSON with both fields (legacy / default when no flags given)
+  --output-music    plain-text music/audio prompt  (feed into S2-sound-gen-lyria.py)
+  --output-lipsync  JSON array of all timestamped audio events (speech + sfx)  (feed into S3)
+  --output          combined JSON with both fields (legacy / default when no flags given)
 """
 
 import argparse
@@ -20,7 +21,9 @@ from pathlib import Path
 import google.generativeai as genai
 
 SYSTEM_PROMPT = """\
-You are an expert film sound designer and music composer analyzing a silent or archival video clip.
+You are an expert silent-film sound designer analyzing a video clip to recreate its full
+soundscape. The clip has no audio — your job is to infer every sound that would realistically
+accompany what you see on screen.
 
 Analyze the video carefully and return a JSON object with exactly two keys:
 
@@ -30,15 +33,25 @@ Analyze the video carefully and return a JSON object with exactly two keys:
    - Tempo and energy level
    - Key instruments
    - Mood and emotional arc across the clip
-   - Any sound effects that should accompany the music (foley, ambience, etc.)
 
-2. "lip_sync": A list of objects, each representing a moment where a character appears to speak,
-   shout, react, or make a vocal sound. Each object must have:
-   - "timestamp_sec": approximate time in seconds (float) from the start of the clip
-   - "character": brief description of who is speaking (e.g. "man in hat", "woman on left")
-   - "utterance": the most likely word(s), exclamation, or phonetic approximation
-     (e.g. "Help!", "Ouch!", "What?", "No no no", "Ha ha ha")
-   - "confidence": "high", "medium", or "low" based on how clear the lip movement is
+2. "audio_events": A chronologically-sorted list of every discrete sound moment in the clip.
+   Include BOTH character vocal sounds AND environmental/foley sound effects.
+   Each object must have:
+   - "timestamp_sec": time in seconds (float) from the start of the clip
+   - "duration_sec": estimated duration of the sound in seconds (float)
+   - "type": either "speech" (character vocal) or "sfx" (sound effect / foley)
+   - For type "speech":
+       - "character": brief description (e.g. "man in hat", "woman on left")
+       - "utterance": most likely word(s) or exclamation (e.g. "Help!", "Ouch!", "Ha ha ha!")
+       - "confidence": "high", "medium", or "low" based on lip movement clarity
+   - For type "sfx":
+       - "description": concise plain-English description of the sound suitable for a sound
+         effects generator (e.g. "wooden floorboard creak", "door slam", "glass shattering",
+         "horse hooves on cobblestone", "crowd gasp", "cartoon boing", "ticking clock")
+       - "confidence": "high", "medium", or "low"
+
+   Be thorough — include footsteps, impacts, ambient sounds, object interactions, reactions,
+   doors, vehicles, weather, crowd noise, etc. A good sound design pass has many events.
 
 Return ONLY the raw JSON object with no markdown fencing or extra commentary.
 """
@@ -80,18 +93,24 @@ def pretty_print(data: dict) -> None:
     print("\n=== MUSIC / AUDIO COMPOSITION PROMPT ===\n")
     print(data.get("music_prompt", "(none)"))
 
-    print("\n=== LIP SYNC & DIALOGUE TIMESTAMPS ===\n")
-    lip_sync = data.get("lip_sync", [])
-    if not lip_sync:
-        print("No lip-sync moments detected.")
+    print("\n=== AUDIO EVENTS (speech + sfx) ===\n")
+    events = data.get("audio_events", [])
+    if not events:
+        print("No audio events detected.")
         return
 
-    for entry in lip_sync:
-        ts = entry.get("timestamp_sec", "?")
-        char = entry.get("character", "unknown")
-        utt = entry.get("utterance", "")
-        conf = entry.get("confidence", "")
-        print(f"  [{ts:>6.2f}s]  {char:<25}  \"{utt}\"  ({conf} confidence)")
+    for e in events:
+        ts = e.get("timestamp_sec", 0)
+        dur = e.get("duration_sec", 0)
+        kind = e.get("type", "?")
+        conf = e.get("confidence", "")
+        if kind == "speech":
+            char = e.get("character", "unknown")
+            utt = e.get("utterance", "")
+            print(f"  [{ts:>6.2f}s +{dur:.1f}s]  SPEECH  {char:<22}  \"{utt}\"  ({conf})")
+        else:
+            desc = e.get("description", "")
+            print(f"  [{ts:>6.2f}s +{dur:.1f}s]  SFX     {desc}  ({conf})")
 
 
 def write_outputs(data: dict, output_music: Path | None, output_lipsync: Path | None, output: Path | None) -> None:
@@ -102,9 +121,9 @@ def write_outputs(data: dict, output_music: Path | None, output_lipsync: Path | 
 
     if output_lipsync:
         output_lipsync.write_text(
-            json.dumps(data.get("lip_sync", []), indent=2), encoding="utf-8"
+            json.dumps(data.get("audio_events", []), indent=2), encoding="utf-8"
         )
-        print(f"Lip-sync JSON written to: {output_lipsync}")
+        print(f"Audio events JSON written to: {output_lipsync}")
 
     if output:
         output.write_text(json.dumps(data, indent=2), encoding="utf-8")
