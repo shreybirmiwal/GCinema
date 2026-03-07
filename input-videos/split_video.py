@@ -66,8 +66,8 @@ def split_video(input_path: str, segments: list[tuple[float, float, str | None]]
         cmd = [
             "ffmpeg", "-y",
             "-ss", seconds_to_ffmpeg(start),
-            "-i", input_path,
             "-t", str(duration),
+            "-i", input_path,
             "-vf", "setpts=2.0*PTS",
             "-c:v", "libx264", "-preset", "fast", "-crf", "23",
             "-an",
