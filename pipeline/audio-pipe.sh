@@ -55,7 +55,11 @@ echo "Language: $LANGUAGE"
 # ---- Paths ---------------------------------------------------------------
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 AUDIO_DIR="$(cd "$SCRIPT_DIR/../audio" && pwd)"
-WORK_DIR="$SCRIPT_DIR/output/audio"
+
+# Derive output directory from the video stem so audio lives next to the
+# scene clips: pipeline/output/<STEM>/audio/
+VIDEO_STEM="$(basename "$VIDEO" .mp4)"
+WORK_DIR="$SCRIPT_DIR/output/$VIDEO_STEM/audio"
 mkdir -p "$WORK_DIR"
 
 MUSIC_PROMPT="$WORK_DIR/music_prompt.txt"
