@@ -50,16 +50,6 @@ def main() -> int:
     output_dir = args.output_dir.resolve() if args.output_dir else script_dir
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    downloaded_files: list[Path] = []
-
-    class TrackDownload(yt_dlp.YoutubeDL):
-        def process_info(self, info_dict):
-            result = super().process_info(info_dict)
-            filepath = info_dict.get("filepath") or info_dict.get("_filename")
-            if filepath:
-                downloaded_files.append(Path(filepath))
-            return result
-
     ydl_opts = {
         # Prefer video-only streams; fall back to combined stream (m3u8/https)
         "format": "bestvideo[ext=mp4]/bestvideo/best[ext=mp4]/best",
@@ -73,28 +63,24 @@ def main() -> int:
         ydl_opts["cookiesfrombrowser"] = (args.cookies_from_browser,)
 
     try:
-        with TrackDownload(ydl_opts) as ydl:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(args.url, download=True)
-            # Resolve final filepath from info dict
-            filepath = ydl.prepare_filename(info)
-            downloaded_files.append(Path(filepath))
+            fp = Path(ydl.prepare_filename(info))
     except yt_dlp.utils.DownloadError as e:
         print(f"Error: {e}", file=sys.stderr)
         return 1
 
-    # Strip audio from every downloaded file (in case a combined stream was used)
-    for fp in set(downloaded_files):
-        if fp.exists() and fp.suffix in {".mp4", ".webm", ".mkv"}:
-            has_audio = subprocess.run(
-                ["ffprobe", "-v", "error", "-select_streams", "a",
-                 "-show_entries", "stream=codec_type", "-of", "csv=p=0", str(fp)],
-                capture_output=True, text=True,
-            ).stdout.strip()
-            if has_audio:
-                strip_audio(fp)
-            else:
-                print(f"No audio track found, skipping strip: {fp.name}")
+    # Strip audio if a combined stream was downloaded
+    if fp.exists() and fp.suffix in {".mp4", ".webm", ".mkv"}:
+        has_audio = subprocess.run(
+            ["ffprobe", "-v", "error", "-select_streams", "a",
+             "-show_entries", "stream=codec_type", "-of", "csv=p=0", str(fp)],
+            capture_output=True, text=True,
+        ).stdout.strip()
+        if has_audio:
+            strip_audio(fp)
 
+    print(f"DOWNLOADED: {fp.resolve()}")
     return 0
 
 

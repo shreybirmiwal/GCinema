@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Pipeline outputs
+*.mp4
+*.webm
+*.mkv
+*.part
+*_frame0.png
+*_colorized.jpg
+*_description.txt
+
+# OS / editors
+.DS_Store
+*.swp
+.env

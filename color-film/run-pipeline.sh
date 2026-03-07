@@ -9,25 +9,19 @@ fi
 
 API_KEY="$1"
 URL="$2"
-
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
-echo "=== Step 0: Download video ==="
-# Use a temp file as a timestamp anchor to detect newly downloaded file
-STAMP=$(mktemp)
-python3 "$SCRIPT_DIR/0-downloader.py" "$URL"
+echo "=== Step 0: Download ==="
+VIDEO=$(python3 "$SCRIPT_DIR/0-downloader.py" "$URL" | tee /dev/stderr | grep '^DOWNLOADED:' | cut -d' ' -f2-)
 
-VIDEO=$(find "$SCRIPT_DIR" -maxdepth 1 -name "*.mp4" -newer "$STAMP" | head -1)
-rm -f "$STAMP"
-
-if [[ -z "$VIDEO" ]]; then
-    echo "Error: Could not detect downloaded video file." >&2
+if [[ -z "$VIDEO" || ! -f "$VIDEO" ]]; then
+    echo "Error: Could not detect downloaded video." >&2
     exit 1
 fi
-echo "Downloaded: $VIDEO"
+echo "Video: $VIDEO"
 
 echo ""
-echo "=== Step 1: Segment video ==="
+echo "=== Step 1: Segment ==="
 python3 "$SCRIPT_DIR/1-segment.py" "$VIDEO"
 
 STEM="$(basename "$VIDEO" .mp4)"
@@ -37,32 +31,39 @@ if [[ ${#CLIPS[@]} -eq 0 ]]; then
     echo "Error: No scene clips found after segmentation." >&2
     exit 1
 fi
-
 echo "Found ${#CLIPS[@]} scene clip(s)"
+
+PREV_COLORIZED=""
 
 for CLIP in "${CLIPS[@]}"; do
     CLIP_STEM="$(basename "$CLIP" .mp4)"
     echo ""
-    echo "--- Processing: $CLIP_STEM ---"
+    echo "--- $CLIP_STEM ---"
 
-    echo "  Step 2: Video reasoning..."
-    DESC_OUT="$SCRIPT_DIR/${CLIP_STEM}_description.txt"
+    echo "  [2] Video reasoning..."
     python3 "$SCRIPT_DIR/2-gemini-video-reason.py" "$CLIP" \
         --api-key "$API_KEY" \
-        --output "$DESC_OUT"
+        --output "$SCRIPT_DIR/${CLIP_STEM}_description.txt"
 
-    echo "  Step 3: Extract keyframe..."
+    echo "  [3] Extract keyframe..."
     python3 "$SCRIPT_DIR/3-extract-key-frame.py" "$CLIP"
     FRAME="$SCRIPT_DIR/${CLIP_STEM}_frame0.png"
 
     if [[ ! -f "$FRAME" ]]; then
-        echo "  Warning: Keyframe not found at $FRAME, skipping colorization." >&2
+        echo "  Warning: keyframe not found, skipping colorization." >&2
         continue
     fi
 
-    echo "  Step 4: Colorize keyframe..."
-    python3 "$SCRIPT_DIR/4-colorize-keyframe.py" "$FRAME" --api-key "$API_KEY"
+    echo "  [4] Colorize keyframe..."
+    COLORIZE_ARGS=("$FRAME" --api-key "$API_KEY")
+    if [[ -n "$PREV_COLORIZED" && -f "$PREV_COLORIZED" ]]; then
+        COLORIZE_ARGS+=(--reference "$PREV_COLORIZED")
+        echo "       (using reference: $(basename "$PREV_COLORIZED"))"
+    fi
+    python3 "$SCRIPT_DIR/4-colorize-keyframe.py" "${COLORIZE_ARGS[@]}"
+
+    PREV_COLORIZED="$SCRIPT_DIR/${CLIP_STEM}_frame0_colorized.jpg"
 done
 
 echo ""
-echo "=== Pipeline complete! ==="
+echo "=== Pipeline complete ==="
