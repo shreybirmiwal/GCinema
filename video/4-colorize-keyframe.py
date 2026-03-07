@@ -10,10 +10,11 @@ import argparse
 import os
 import sys
 from pathlib import Path
-
-import google.generativeai as genai
-from PIL import Image
 import io
+
+from google import genai
+from google.genai import types
+from PIL import Image
 
 MODEL = "gemini-2.0-flash-exp-image-generation"
 
@@ -34,16 +35,14 @@ PROMPT_WITH_REF = (
 )
 
 
-def load_image_part(path: Path) -> genai.types.Part:
+def load_image_part(path: Path) -> types.Part:
     img = Image.open(path).convert("RGB")
     buf = io.BytesIO()
     img.save(buf, format="JPEG")
-    return {"mime_type": "image/jpeg", "data": buf.getvalue()}
+    return types.Part.from_bytes(data=buf.getvalue(), mime_type="image/jpeg")
 
 
-def colorize(bw_path: Path, ref_path: Path | None, model_name: str) -> bytes:
-    model = genai.GenerativeModel(model_name=model_name)
-
+def colorize(client: genai.Client, bw_path: Path, ref_path: Path | None, model_name: str) -> bytes:
     parts = []
     if ref_path:
         parts.append(load_image_part(bw_path))
@@ -53,10 +52,12 @@ def colorize(bw_path: Path, ref_path: Path | None, model_name: str) -> bytes:
         parts.append(load_image_part(bw_path))
         parts.append(PROMPT_NO_REF)
 
-    response = model.generate_content(
-        parts,
-        generation_config=genai.GenerationConfig(response_modalities=["IMAGE", "TEXT"]),
-        request_options={"timeout": 120},
+    response = client.models.generate_content(
+        model=model_name,
+        contents=parts,
+        config=types.GenerateContentConfig(
+            response_modalities=["IMAGE", "TEXT"],
+        ),
     )
 
     for part in response.candidates[0].content.parts:
@@ -68,7 +69,7 @@ def colorize(bw_path: Path, ref_path: Path | None, model_name: str) -> bytes:
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Colorize a B&W keyframe with Gemini (nano banana edition)."
+        description="Colorize a B&W keyframe with Gemini."
     )
     parser.add_argument(
         "input",
@@ -106,7 +107,7 @@ def main() -> int:
         print("Error: No API key provided. Set GEMINI_API_KEY or pass --api-key.", file=sys.stderr)
         return 1
 
-    genai.configure(api_key=api_key)
+    client = genai.Client(api_key=api_key)
 
     bw_path = args.input.resolve()
     if not bw_path.is_file():
@@ -128,7 +129,7 @@ def main() -> int:
     print("Colorizing ...")
 
     try:
-        image_bytes = colorize(bw_path, ref_path, args.model)
+        image_bytes = colorize(client, bw_path, ref_path, args.model)
     except Exception as exc:
         print(f"Error: {exc}", file=sys.stderr)
         return 1

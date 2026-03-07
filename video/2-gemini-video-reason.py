@@ -12,7 +12,7 @@ import sys
 import time
 from pathlib import Path
 
-import google.generativeai as genai
+from google import genai
 
 SYSTEM_PROMPT = (
     "Using the video attached, reason to create a comprehensive description of what occurs in the clip. "
@@ -21,16 +21,16 @@ SYSTEM_PROMPT = (
 )
 
 
-def upload_video(path: Path) -> genai.types.File:
+def upload_video(client: genai.Client, path: Path):
     """Upload the video file and wait until processing is complete."""
     print(f"Uploading {path} ...")
-    video_file = genai.upload_file(path=str(path))
+    video_file = client.files.upload(file=str(path))
 
     # The Files API processes uploads asynchronously; poll until ready.
     while video_file.state.name == "PROCESSING":
         print("  Waiting for Gemini to process video ...", end="\r")
         time.sleep(5)
-        video_file = genai.get_file(video_file.name)
+        video_file = client.files.get(name=video_file.name)
 
     if video_file.state.name != "ACTIVE":
         raise RuntimeError(
@@ -41,11 +41,10 @@ def upload_video(path: Path) -> genai.types.File:
     return video_file
 
 
-def describe_video(video_file: genai.types.File, model_name: str) -> str:
-    model = genai.GenerativeModel(model_name=model_name)
-    response = model.generate_content(
-        [video_file, SYSTEM_PROMPT],
-        request_options={"timeout": 300},
+def describe_video(client: genai.Client, video_file, model_name: str) -> str:
+    response = client.models.generate_content(
+        model=model_name,
+        contents=[video_file, SYSTEM_PROMPT],
     )
     return response.text
 
@@ -86,7 +85,7 @@ def main() -> int:
         )
         return 1
 
-    genai.configure(api_key=api_key)
+    client = genai.Client(api_key=api_key)
 
     input_path = args.input.resolve()
     if not input_path.exists():
@@ -97,9 +96,9 @@ def main() -> int:
         return 1
 
     try:
-        video_file = upload_video(input_path)
+        video_file = upload_video(client, input_path)
         print(f"Generating description with {args.model} ...")
-        description = describe_video(video_file, args.model)
+        description = describe_video(client, video_file, args.model)
     except Exception as exc:
         print(f"Error: {exc}", file=sys.stderr)
         return 1
