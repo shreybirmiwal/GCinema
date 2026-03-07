@@ -16,7 +16,7 @@ from google import genai
 from google.genai import types
 from PIL import Image
 
-MODEL = "nanobanana-2"
+MODEL = "gemini-3.1-flash-image-preview"
 
 PROMPT_NO_REF = (
     "Add natural, realistic color to this black and white image. "
@@ -58,11 +58,30 @@ def colorize(
         ),
     )
 
-    for part in response.candidates[0].content.parts:
+    if not response.candidates:
+        raise RuntimeError(
+            f"Model returned no candidates.\n"
+            f"Prompt feedback: {getattr(response, 'prompt_feedback', 'N/A')}\n"
+            f"Raw response: {response}"
+        )
+
+    candidate = response.candidates[0]
+    if not candidate.content or not candidate.content.parts:
+        raise RuntimeError(
+            f"Model returned empty content.\n"
+            f"Finish reason: {getattr(candidate, 'finish_reason', 'N/A')}\n"
+            f"Safety ratings: {getattr(candidate, 'safety_ratings', 'N/A')}"
+        )
+
+    for part in candidate.content.parts:
         if part.inline_data and part.inline_data.mime_type.startswith("image/"):
             return part.inline_data.data
 
-    raise RuntimeError("Model did not return an image in the response.")
+    text_parts = [p.text for p in candidate.content.parts if hasattr(p, "text") and p.text]
+    raise RuntimeError(
+        f"Model did not return an image.\n"
+        f"Text response: {' '.join(text_parts) if text_parts else '(none)'}"
+    )
 
 
 def main() -> int:

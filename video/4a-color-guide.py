@@ -15,7 +15,7 @@ from pathlib import Path
 
 from google import genai
 
-MODEL = "gemini-3.1"
+MODEL = "gemini-3.1-pro-preview"
 
 COLOR_GUIDE_PROMPT = (
     "Watch this entire black-and-white film and produce a master color guide "

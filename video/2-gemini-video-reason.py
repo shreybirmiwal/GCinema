@@ -71,8 +71,8 @@ def main() -> int:
     )
     parser.add_argument(
         "--model",
-        default="gemini-3.1",
-        help="Gemini model to use (default: gemini-3.1)",
+        default="gemini-3.1-pro-preview",
+        help="Gemini model to use (default: gemini-3.1-pro-preview)",
     )
     parser.add_argument(
         "--api-key",

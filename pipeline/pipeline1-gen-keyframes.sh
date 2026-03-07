@@ -71,9 +71,9 @@ for CLIP in "${CLIPS[@]}"; do
         --api-key "$API_KEY" \
         --output "$SCENE_DIR/description.txt"
 
-    echo "  [3] Extract keyframe (skipping 0.5s to avoid black frames)..."
+    echo "  [3] Extract keyframe..."
     FRAME="$SCENE_DIR/frame0.png"
-    python3 "$SCRIPT_DIR/../video/3-extract-key-frame.py" "$CLIP" --output "$FRAME" --skip-seconds 0.5
+    python3 "$SCRIPT_DIR/../video/3-extract-key-frame.py" "$CLIP" --output "$FRAME"
 
     if [[ ! -f "$FRAME" ]]; then
         echo "  Warning: keyframe not found, skipping colorization." >&2

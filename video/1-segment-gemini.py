@@ -147,8 +147,8 @@ def main() -> int:
         help="Directory for output clips (default: same as input)",
     )
     parser.add_argument(
-        "--model", default="gemini-3.1",
-        help="Gemini model to use (default: gemini-3.1)",
+        "--model", default="gemini-3.1-pro-preview",
+        help="Gemini model to use (default: gemini-3.1-pro-preview)",
     )
     parser.add_argument(
         "--api-key", default=None,
@@ -177,14 +177,21 @@ def main() -> int:
     output_dir = args.output_dir.resolve() if args.output_dir else input_path.parent
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    client = genai.Client(api_key=api_key)
-
-    try:
-        video_file = upload_video(client, input_path)
-        cuts = get_cut_timestamps(client, video_file, args.model)
-    except Exception as exc:
-        print(f"Error: {exc}", file=sys.stderr)
-        return 1
+    # Check for hardcoded sidecar cuts file (skips Gemini upload)
+    sidecar = input_path.with_suffix(".cuts.json")
+    if sidecar.exists():
+        print(f"Found sidecar cuts file: {sidecar} — skipping Gemini.")
+        with open(sidecar) as f:
+            data = json.load(f)
+        cuts = sorted(float(t) for t in data["cuts"] if float(t) > 0.0)
+    else:
+        client = genai.Client(api_key=api_key)
+        try:
+            video_file = upload_video(client, input_path)
+            cuts = get_cut_timestamps(client, video_file, args.model)
+        except Exception as exc:
+            print(f"Error: {exc}", file=sys.stderr)
+            return 1
 
     num_scenes = len(cuts) + 1
     print(f"\nDetected {len(cuts)} cut(s) → {num_scenes} scene(s):")

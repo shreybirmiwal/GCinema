@@ -36,9 +36,9 @@ def main() -> int:
     parser.add_argument(
         "--skip-seconds",
         type=float,
-        default=0.5,
+        default=0.0,
         help="Seconds to seek into the clip before grabbing the frame, "
-             "to avoid black fade-in frames (default: 0.5)",
+             "to avoid black fade-in frames (default: 0.0)",
     )
     args = parser.parse_args()
 
