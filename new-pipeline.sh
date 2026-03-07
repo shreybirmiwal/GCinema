@@ -42,6 +42,17 @@ if [[ ${#CLIPS[@]} -eq 0 ]]; then
 fi
 echo "Found ${#CLIPS[@]} scene clip(s)"
 
+# ── Step 1.5: Master color guide ─────────────────────────────────────────────
+echo ""
+echo "=== Step 1.5: Generate master color guide ==="
+# Extract first frame of the original video to use as the reference for the guide
+FIRST_FRAME="$OUTPUT_DIR/first_frame.png"
+ffmpeg -i "$VIDEO" -vframes 1 -q:v 2 "$FIRST_FRAME" -y -loglevel error
+COLOR_GUIDE="$OUTPUT_DIR/color_guide.txt"
+python3 "$SCRIPT_DIR/video/4a-color-guide.py" "$FIRST_FRAME" \
+    --api-key "$API_KEY" \
+    --output "$COLOR_GUIDE"
+
 # ── Steps 2-4: Per-scene processing ──────────────────────────────────────────
 PREV_COLORIZED=""
 
@@ -78,6 +89,9 @@ for CLIP in "${CLIPS[@]}"; do
     if [[ -n "$PREV_COLORIZED" && -f "$PREV_COLORIZED" ]]; then
         COLORIZE_ARGS+=(--reference "$PREV_COLORIZED")
         echo "       (using reference: $PREV_COLORIZED)"
+    fi
+    if [[ -f "$COLOR_GUIDE" ]]; then
+        COLORIZE_ARGS+=(--color-guide "$COLOR_GUIDE")
     fi
     python3 "$SCRIPT_DIR/video/4-colorize-keyframe.py" "${COLORIZE_ARGS[@]}"
 
