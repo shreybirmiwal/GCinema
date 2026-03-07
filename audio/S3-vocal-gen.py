@@ -49,6 +49,39 @@ MALE_VOICES = [
 FEMALE_KEYWORDS = {"woman", "female", "girl", "lady", "she", "her", "mrs", "miss", "ms"}
 MALE_KEYWORDS   = {"man", "male", "boy", "guy", "he", "him", "mr", "sir", "charlie", "chaplin"}
 
+# Map human-readable language names → BCP-47 codes accepted by ElevenLabs
+LANGUAGE_CODES: dict[str, str] = {
+    "english": "en",
+    "spanish": "es",
+    "french": "fr",
+    "german": "de",
+    "italian": "it",
+    "portuguese": "pt",
+    "polish": "pl",
+    "hindi": "hi",
+    "japanese": "ja",
+    "chinese": "zh",
+    "korean": "ko",
+    "arabic": "ar",
+    "dutch": "nl",
+    "russian": "ru",
+    "turkish": "tr",
+    "swedish": "sv",
+    "indonesian": "id",
+    "filipino": "fil",
+    "malay": "ms",
+    "romanian": "ro",
+    "ukrainian": "uk",
+    "greek": "el",
+    "czech": "cs",
+    "danish": "da",
+    "finnish": "fi",
+    "bulgarian": "bg",
+    "croatian": "hr",
+    "slovak": "sk",
+    "tamil": "ta",
+}
+
 _char_voice_cache: dict[str, str] = {}
 _female_idx = 0
 _male_idx = 0
@@ -93,14 +126,17 @@ def _elevenlabs_client(api_key: str):
     return ElevenLabs(api_key=api_key)
 
 
-def generate_speech(client, utterance: str, voice: str) -> bytes:
+def generate_speech(client, utterance: str, voice: str, language_code: str | None = None) -> bytes:
     """Return MP3 bytes for a spoken utterance via ElevenLabs TTS."""
-    audio_iter = client.text_to_speech.convert(
+    kwargs = dict(
         text=utterance,
         voice_id=voice,
         model_id="eleven_multilingual_v2",
         output_format="mp3_44100_128",
     )
+    if language_code:
+        kwargs["language_code"] = language_code
+    audio_iter = client.text_to_speech.convert(**kwargs)
     return b"".join(audio_iter)
 
 
@@ -122,7 +158,7 @@ def mp3_to_segment(mp3_bytes: bytes) -> AudioSegment:
     return AudioSegment.from_file(io.BytesIO(mp3_bytes), format="mp3")
 
 
-def build_track(events: list[dict], duration_ms: int, voice: str, api_key: str) -> AudioSegment:
+def build_track(events: list[dict], duration_ms: int, voice: str, api_key: str, language_code: str | None = None) -> AudioSegment:
     """Generate each event and overlay it at the correct timestamp."""
     client = _elevenlabs_client(api_key)
 
@@ -156,7 +192,7 @@ def build_track(events: list[dict], duration_ms: int, voice: str, api_key: str) 
                 gender    = event.get("gender")
                 char_voice = pick_voice(char, gender)
                 print(f"  [{i+1}/{len(events)}] TTS  \"{utterance}\" ({char}, {gender or '?'}) [voice:{char_voice[:8]}] @ {ts_ms/1000:.1f}s ...")
-                mp3 = generate_speech(client, utterance, char_voice)
+                mp3 = generate_speech(client, utterance, char_voice, language_code=language_code)
             else:
                 desc     = event.get("description", "sound effect")
                 dur_hint = event.get("duration_sec", 2.0)
@@ -209,6 +245,14 @@ def main() -> int:
         help="ElevenLabs voice ID or name for speech events (default: Adam)",
     )
     parser.add_argument(
+        "--language", default="English",
+        help=(
+            "Language for TTS speech (e.g. English, Spanish, French, Japanese). "
+            "Uses eleven_multilingual_v2 — the text itself drives the accent; "
+            "this also sets the BCP-47 language_code hint when available. Default: English"
+        ),
+    )
+    parser.add_argument(
         "--api-key", default=None,
         help="ElevenLabs API key (defaults to ELEVENLABS_API_KEY env var)",
     )
@@ -241,10 +285,16 @@ def main() -> int:
         last_ts = max(e.get("timestamp_sec", 0) + e.get("duration_sec", 2) for e in events)
         duration_ms = int((last_ts + 5) * 1000)
 
+    language_code = LANGUAGE_CODES.get(args.language.lower())
+    if language_code:
+        print(f"Language: {args.language} (BCP-47: {language_code})")
+    else:
+        print(f"Language: {args.language} (no BCP-47 mapping — relying on text-based auto-detection)")
+
     print(f"Building foley track — {len(events)} events over {duration_ms/1000:.1f}s ...")
 
     try:
-        track = build_track(events, duration_ms, args.voice, api_key)
+        track = build_track(events, duration_ms, args.voice, api_key, language_code=language_code)
     except Exception as exc:
         print(f"Error: {exc}", file=sys.stderr)
         return 1

@@ -41,6 +41,10 @@ that would bring this film to life, exactly as a 1920s sound restoration team wo
 The following characters appear in this clip:
 {character_list}
 
+LANGUAGE REQUIREMENT: All dialogue and speech utterances MUST be written in {language}.
+Every "utterance" field for speech events must contain natural, expressive {language} words or phrases.
+Do NOT write utterances in any other language.
+
 Analyze the video carefully and return a JSON object with exactly two keys:
 
 1. "music_prompt": A detailed text prompt (2-5 sentences) describing the ideal background music or
@@ -124,12 +128,12 @@ def identify_characters(video_file, client: genai.Client, model_name: str) -> li
     return characters
 
 
-def analyze_video(video_file, client: genai.Client, model_name: str, characters: list) -> dict:
+def analyze_video(video_file, client: genai.Client, model_name: str, characters: list, language: str = "English") -> dict:
     char_list = "\n".join(
         f"- {c['id']} ({c['gender']}, {c.get('approximate_age','adult')}): {c['description']} — {c.get('role','')}"
         for c in characters
     )
-    prompt = AUDIO_PROMPT_TEMPLATE.format(character_list=char_list)
+    prompt = AUDIO_PROMPT_TEMPLATE.format(character_list=char_list, language=language)
     print("Pass 2: generating music prompt + audio events...")
     response = client.models.generate_content(
         model=model_name,
@@ -201,6 +205,10 @@ def main() -> int:
         help="Gemini model to use (default: gemini-2.0-flash)",
     )
     parser.add_argument(
+        "--language", default="English",
+        help="Language for dialogue utterances (e.g. English, Spanish, French, Japanese). Default: English",
+    )
+    parser.add_argument(
         "--api-key", default=None,
         help="Google AI API key (defaults to GEMINI_API_KEY env var)",
     )
@@ -221,7 +229,7 @@ def main() -> int:
     try:
         video_file = upload_video(input_path, client)
         characters = identify_characters(video_file, client, args.model)
-        data = analyze_video(video_file, client, args.model, characters)
+        data = analyze_video(video_file, client, args.model, characters, language=args.language)
     except json.JSONDecodeError as exc:
         print(f"Error: Gemini returned non-JSON output: {exc}", file=sys.stderr)
         return 1

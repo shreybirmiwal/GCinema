@@ -2,22 +2,44 @@
 # Audio pipeline: video → synchronized audio MP3
 #
 # Usage:
-#   ./run.sh <input_video> <gemini_api_key> <elevenlabs_api_key> [output.mp3]
+#   ./audio-pipe.sh <input_video> <gemini_api_key> <elevenlabs_api_key> [output.mp3] [--language LANG]
 #
 # Examples:
-#   ./run.sh clip.mp4 AIza... sk-... final_audio.mp3
-#   ./run.sh clip.mp4 AIza... sk-...          # outputs pipeline/output/audio/final_audio.mp3
+#   ./audio-pipe.sh clip.mp4 AIza... sk-... final_audio.mp3
+#   ./audio-pipe.sh clip.mp4 AIza... sk-...                        # default English output
+#   ./audio-pipe.sh clip.mp4 AIza... sk-... out.mp3 --language Spanish
+#   ./audio-pipe.sh clip.mp4 AIza... sk-... --language French      # language without output path
 #
 # Optional env vars (instead of positional args):
-#   GEMINI_API_KEY, ELEVENLABS_API_KEY
+#   GEMINI_API_KEY, ELEVENLABS_API_KEY, AUDIO_LANGUAGE
 
 set -euo pipefail
 
 # ---- Args ----------------------------------------------------------------
-VIDEO="${1:?Usage: $0 <video> <gemini_key> <elevenlabs_key> [output.mp3]}"
+VIDEO="${1:?Usage: $0 <video> <gemini_key> <elevenlabs_key> [output.mp3] [--language LANG]}"
 GEMINI_KEY="${2:-${GEMINI_API_KEY:-}}"
 ELEVENLABS_KEY="${3:-${ELEVENLABS_API_KEY:-}}"
-OUTPUT="${4:-}"
+
+# Parse remaining positional/named args (output path and --language)
+OUTPUT=""
+LANGUAGE="${AUDIO_LANGUAGE:-English}"
+shift 3 || true
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --language|-l)
+      LANGUAGE="${2:?--language requires a value (e.g. Spanish)}"
+      shift 2
+      ;;
+    --language=*)
+      LANGUAGE="${1#*=}"
+      shift
+      ;;
+    *)
+      OUTPUT="$1"
+      shift
+      ;;
+  esac
+done
 
 if [[ -z "$GEMINI_KEY" ]]; then
   echo "Error: Gemini API key required (arg 2 or GEMINI_API_KEY env var)" >&2
@@ -27,6 +49,8 @@ if [[ -z "$ELEVENLABS_KEY" ]]; then
   echo "Error: ElevenLabs API key required (arg 3 or ELEVENLABS_API_KEY env var)" >&2
   exit 1
 fi
+
+echo "Language: $LANGUAGE"
 
 # ---- Paths ---------------------------------------------------------------
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -55,6 +79,7 @@ echo "============================================================"
 python3 "$AUDIO_DIR/S1-sound-gen-prompt.py" "$VIDEO" \
   --output-music "$MUSIC_PROMPT" \
   --output-lipsync "$AUDIO_EVENTS" \
+  --language "$LANGUAGE" \
   --api-key "$GEMINI_KEY"
 
 # ---- S2: Lyria music generation ------------------------------------------
@@ -75,6 +100,7 @@ echo "============================================================"
 python3 "$AUDIO_DIR/S3-vocal-gen.py" "$AUDIO_EVENTS" \
   --output "$FOLEY_WAV" \
   --duration "$DURATION" \
+  --language "$LANGUAGE" \
   --api-key "$ELEVENLABS_KEY"
 
 # ---- S4: Mix to exact video length ---------------------------------------
