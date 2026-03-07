@@ -4,7 +4,10 @@ Send a video clip to Gemini and generate:
   1. A music/audio composition prompt describing what the soundtrack would likely sound like.
   2. A lip-sync / dialogue transcript with timestamps for any spoken words, exclamations, etc.
 
-Output is printed to stdout or written to a JSON file.
+Outputs:
+  --output-music   plain-text music/audio prompt  (feed into S2-sound-gen-lyria.py)
+  --output-lipsync JSON array of timestamped vocal moments
+  --output         combined JSON with both fields (legacy / default when no flags given)
 """
 
 import argparse
@@ -91,14 +94,39 @@ def pretty_print(data: dict) -> None:
         print(f"  [{ts:>6.2f}s]  {char:<25}  \"{utt}\"  ({conf} confidence)")
 
 
+def write_outputs(data: dict, output_music: Path | None, output_lipsync: Path | None, output: Path | None) -> None:
+    """Write results to the requested output paths."""
+    if output_music:
+        output_music.write_text(data.get("music_prompt", ""), encoding="utf-8")
+        print(f"Music prompt written to:  {output_music}")
+
+    if output_lipsync:
+        output_lipsync.write_text(
+            json.dumps(data.get("lip_sync", []), indent=2), encoding="utf-8"
+        )
+        print(f"Lip-sync JSON written to: {output_lipsync}")
+
+    if output:
+        output.write_text(json.dumps(data, indent=2), encoding="utf-8")
+        print(f"Combined JSON written to: {output}")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         description="Generate a music composition prompt and lip-sync transcript from a video clip."
     )
     parser.add_argument("input", type=Path, help="Path to input video file (e.g. MP4)")
     parser.add_argument(
+        "--output-music", "-om", type=Path, default=None, metavar="PATH",
+        help="Write the music/audio composition prompt as plain text to this file",
+    )
+    parser.add_argument(
+        "--output-lipsync", "-ol", type=Path, default=None, metavar="PATH",
+        help="Write the timestamped lip-sync array as JSON to this file",
+    )
+    parser.add_argument(
         "--output", "-o", type=Path, default=None,
-        help="Path to write JSON output (default: prints to stdout)",
+        help="Write the full combined JSON (music_prompt + lip_sync) to this file",
     )
     parser.add_argument(
         "--model", default="gemini-2.0-flash",
@@ -133,9 +161,9 @@ def main() -> int:
         print(f"Error: {exc}", file=sys.stderr)
         return 1
 
-    if args.output:
-        args.output.write_text(json.dumps(data, indent=2), encoding="utf-8")
-        print(f"Results written to: {args.output}")
+    any_file_output = args.output_music or args.output_lipsync or args.output
+    if any_file_output:
+        write_outputs(data, args.output_music, args.output_lipsync, args.output)
     else:
         pretty_print(data)
 
