@@ -122,8 +122,8 @@ def split_video(input_path: Path, cuts: list[float], output_dir: Path, show_prog
             "-ss", str(start),
             "-i", str(input_path),
             "-t", str(clip_duration),
-            "-c", "copy",
-            "-avoid_negative_ts", "make_zero",
+            "-c:v", "libx264", "-preset", "fast", "-crf", "18",
+            "-an",
             "-y",
             str(out_file),
         ]

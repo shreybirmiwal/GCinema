@@ -13,15 +13,38 @@ import time
 from pathlib import Path
 
 from google import genai
+from google.genai import types
 
 SYSTEM_PROMPT = (
-    "Describe what HAPPENS in this clip in 2-4 plain sentences. "
-    "Focus only on the people, animals, objects, and their actions — who does what, "
-    "where they are, what they interact with.\n\n"
-    "Do NOT mention: camera angles, shot composition, lighting, film techniques, "
-    "that it is black and white, or any audio/sound. "
-    "Do NOT use markdown, headers, or bullet points. "
-    "Just write plain sentences describing the scene action."
+    "You are writing a video description that a video generation AI will use to "
+    "recreate this clip. Your output must be extremely long and detailed — aim for "
+    "at least 400 words. There is no upper length limit; longer is always better.\n\n"
+    "Describe EVERY MOMENT from start to finish. Walk through the clip "
+    "chronologically, covering every significant movement and change.\n\n"
+    "Cover ALL of the following in depth:\n\n"
+    "ACTIONS: Walk through every movement. What does each person or animal do, in "
+    "what order? Describe specific body mechanics — ducking, leaning, stumbling, "
+    "reaching, flinching, pivoting, etc. Note the speed and urgency of each action "
+    "(sprinting vs. jogging, cautious step vs. confident stride).\n\n"
+    "SPACE & BLOCKING: Where is each character positioned relative to the environment "
+    "and to each other? Which direction do they move (left-to-right, toward camera, "
+    "diagonally across the frame)? How does their position change over the clip?\n\n"
+    "APPEARANCE: Describe clothing, build, posture, and distinguishing features of "
+    "every person and animal. Include approximate age, gender, and demeanor.\n\n"
+    "EMOTION & EXPRESSION: Capture facial expressions, body language, and the overall "
+    "mood — fear, joy, determination, panic, calm, etc.\n\n"
+    "ENVIRONMENT: Describe the setting in detail — the ground surface, structures, "
+    "vegetation, objects, weather, time of day, and atmosphere.\n\n"
+    "Do NOT mention: camera angles, shot composition, lighting techniques, film "
+    "terminology, that it is black and white, or any audio/sound.\n"
+    "Do NOT use markdown, headers, or bullet points.\n"
+    "Write in flowing, vivid prose paragraphs. Do not stop early — keep writing "
+    "until every moment of the clip has been described."
+)
+
+USER_PROMPT = (
+    "Describe this video clip in exhaustive detail for a video generation AI. "
+    "Write at least 400 words. Do not stop early."
 )
 
 
@@ -48,7 +71,12 @@ def upload_video(client: genai.Client, path: Path):
 def describe_video(client: genai.Client, video_file, model_name: str) -> str:
     response = client.models.generate_content(
         model=model_name,
-        contents=[video_file, SYSTEM_PROMPT],
+        contents=[video_file, USER_PROMPT],
+        config=types.GenerateContentConfig(
+            system_instruction=SYSTEM_PROMPT,
+            max_output_tokens=8192,
+            temperature=0.7,
+        ),
     )
     return response.text
 

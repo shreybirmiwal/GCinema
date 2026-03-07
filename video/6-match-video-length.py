@@ -25,37 +25,57 @@ def get_duration(path: Path) -> float:
     return float(result.stdout.strip())
 
 
+def has_audio_stream(path: Path) -> bool:
+    result = subprocess.run(
+        [
+            "ffprobe", "-v", "error",
+            "-select_streams", "a",
+            "-show_entries", "stream=index",
+            "-of", "csv=p=0",
+            str(path),
+        ],
+        capture_output=True,
+        text=True,
+    )
+    return bool(result.stdout.strip())
+
+
 def match_length(original: Path, colorized: Path, output: Path) -> None:
     orig_dur = get_duration(original)
     col_dur = get_duration(colorized)
 
-    speed = col_dur / orig_dur  # >1 means colorized is longer (slow down), <1 means speed up
+    # setpts < 1 speeds up video, setpts > 1 slows it down
+    pts_factor = orig_dur / col_dur
     print(f"Original duration:   {orig_dur:.3f}s")
     print(f"Colorized duration:  {col_dur:.3f}s")
-    print(f"Speed factor:        {speed:.4f}x")
+    print(f"PTS factor:          {pts_factor:.4f}x  (target: {orig_dur:.3f}s)")
 
-    # setpts adjusts video timing; atempo handles audio (limited to 0.5-2.0 range)
-    vf = f"setpts={speed:.6f}*PTS"
-
-    # Build audio filter chain: atempo is limited to [0.5, 2.0] so chain multiple if needed
-    remaining = speed
-    atempo_filters = []
-    while remaining > 2.0:
-        atempo_filters.append("atempo=2.0")
-        remaining /= 2.0
-    while remaining < 0.5:
-        atempo_filters.append("atempo=0.5")
-        remaining /= 0.5
-    atempo_filters.append(f"atempo={remaining:.6f}")
-    af = ",".join(atempo_filters)
+    vf = f"setpts={pts_factor:.6f}*PTS"
 
     cmd = [
         "ffmpeg", "-y",
         "-i", str(colorized),
         "-vf", vf,
-        "-af", af,
-        str(output),
     ]
+
+    if has_audio_stream(colorized):
+        # atempo > 1 speeds up audio, atempo < 1 slows it down (inverse of setpts)
+        atempo_speed = col_dur / orig_dur
+        remaining = atempo_speed
+        atempo_filters = []
+        while remaining > 2.0:
+            atempo_filters.append("atempo=2.0")
+            remaining /= 2.0
+        while remaining < 0.5:
+            atempo_filters.append("atempo=0.5")
+            remaining *= 2.0
+        atempo_filters.append(f"atempo={remaining:.6f}")
+        af = ",".join(atempo_filters)
+        cmd += ["-af", af]
+    else:
+        cmd += ["-an"]
+
+    cmd.append(str(output))
 
     print(f"Running: {' '.join(cmd)}")
     subprocess.run(cmd, check=True)

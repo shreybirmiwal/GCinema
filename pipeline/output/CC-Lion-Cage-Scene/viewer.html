@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GCinema — CC-Lion-Cage-Scene</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Crimson+Pro:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:     #080808;
+      --panel:  #111111;
+      --accent: #c8a96e;
+      --gold2:  #e8c98a;
+      --text:   #e0d4c0;
+      --dim:    #555;
+      --border: #1e1e1e;
+      --green:  #5ec87a;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Crimson Pro', Georgia, serif;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    /* ── Film-strip header ── */
+    .filmstrip {
+      height: 28px;
+      background: #0d0d0d;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 8px;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+    .hole {
+      width: 14px;
+      height: 10px;
+      background: var(--bg);
+      border-radius: 2px;
+      border: 1px solid #2a2a2a;
+    }
+
+    header {
+      padding: 18px 36px 14px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: baseline;
+      gap: 14px;
+      flex-shrink: 0;
+    }
+    header h1 {
+      font-family: 'Cinzel', serif;
+      font-size: 1.45rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      color: var(--accent);
+    }
+    header .stem {
+      font-size: 1rem;
+      color: var(--dim);
+      letter-spacing: 0.05em;
+    }
+    header .badge {
+      margin-left: auto;
+      font-size: 0.7rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--dim);
+      border: 1px solid var(--border);
+      padding: 3px 10px;
+      border-radius: 2px;
+    }
+
+    /* ── Video area ── */
+    .videos {
+      display: flex;
+      flex: 1;
+      padding: 20px 36px 0;
+      gap: 0;
+      min-height: 0;
+    }
+
+    .pane {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+    .pane + .pane {
+      border-left: 1px solid var(--border);
+      padding-left: 24px;
+      margin-left: 24px;
+    }
+
+    .pane-label {
+      font-family: 'Cinzel', serif;
+      font-size: 0.7rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--dim);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+    .pane-label .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      flex-shrink: 0;
+    }
+
+    video {
+      width: 100%;
+      aspect-ratio: 16/9;
+      object-fit: contain;
+      background: #000;
+      display: block;
+      border: 1px solid var(--border);
+    }
+
+    .pane-missing {
+      width: 100%;
+      aspect-ratio: 16/9;
+      background: #0a0a0a;
+      border: 1px dashed var(--border);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: var(--dim);
+      gap: 8px;
+    }
+    .pane-missing .icon { font-size: 2rem; opacity: 0.3; }
+    .pane-missing .msg { font-size: 0.85rem; letter-spacing: 0.06em; }
+
+    /* ── Controls ── */
+    .controls {
+      padding: 16px 36px 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+
+    /* Progress bar */
+    .progress-wrap {
+      position: relative;
+      height: 6px;
+      background: var(--border);
+      border-radius: 3px;
+      cursor: pointer;
+    }
+    .progress-fill {
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      background: linear-gradient(90deg, var(--accent), var(--gold2));
+      border-radius: 3px;
+      pointer-events: none;
+      width: 0%;
+    }
+    #seekBar {
+      position: absolute;
+      inset: -6px 0;
+      width: 100%;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    /* Thumb visible range input */
+    input[type=range] {
+      -webkit-appearance: none;
+      appearance: none;
+      background: transparent;
+      outline: none;
+      cursor: pointer;
+    }
+    input[type=range]::-webkit-slider-runnable-track {
+      background: transparent;
+      height: 6px;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--accent);
+      margin-top: -4px;
+    }
+
+    .button-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    button {
+      background: transparent;
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      font-family: 'Cinzel', serif;
+      font-size: 0.7rem;
+      letter-spacing: 0.18em;
+      padding: 7px 18px;
+      cursor: pointer;
+      transition: background 0.12s, color 0.12s;
+      flex-shrink: 0;
+    }
+    button:hover {
+      background: var(--accent);
+      color: var(--bg);
+    }
+
+    #timeDisplay {
+      font-size: 0.82rem;
+      color: var(--dim);
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0.06em;
+      min-width: 88px;
+    }
+
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.78rem;
+      color: var(--dim);
+      letter-spacing: 0.06em;
+    }
+    #statusDot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--dim);
+      transition: background 0.2s;
+      flex-shrink: 0;
+    }
+    #statusDot.playing { background: var(--green); box-shadow: 0 0 6px var(--green); }
+
+    .vol-group {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--dim);
+      font-size: 0.75rem;
+      letter-spacing: 0.1em;
+    }
+    #volSlider { width: 80px; }
+  </style>
+</head>
+<body>
+
+  <div class="filmstrip">
+    <div class="hole"></div><div class="hole"></div><div class="hole"></div>
+    <div class="hole"></div><div class="hole"></div><div class="hole"></div>
+    <div class="hole"></div><div class="hole"></div><div class="hole"></div>
+    <div class="hole"></div><div class="hole"></div><div class="hole"></div>
+    <div class="hole"></div><div class="hole"></div><div class="hole"></div>
+    <div class="hole"></div><div class="hole"></div><div class="hole"></div>
+    <div class="hole"></div><div class="hole"></div>
+  </div>
+
+  <header>
+    <h1>GCinema</h1>
+    <span class="stem">CC-Lion-Cage-Scene</span>
+    <span class="badge">Side-by-Side Comparison</span>
+  </header>
+
+  <div class="videos">
+
+    <div class="pane" id="paneA">
+      <div class="pane-label"><span class="dot"></span> Original (B&amp;W)</div>
+      <div id="originalContainer"></div>
+    </div>
+
+    <div class="pane">
+      <div class="pane-label"><span class="dot"></span> Colorized</div>
+      <video id="vidB" preload="metadata">
+        <source src="/pipeline/output/CC-Lion-Cage-Scene/final_colorized.mp4" type="video/mp4" />
+      </video>
+    </div>
+
+  </div>
+
+  <div class="controls">
+    <div class="progress-wrap">
+      <div class="progress-fill" id="progressFill"></div>
+      <input type="range" id="seekBar" min="0" step="0.001" value="0" />
+    </div>
+
+    <div class="button-row">
+      <button id="playBtn">&#9654; PLAY</button>
+      <button id="restartBtn">&#8635; RESTART</button>
+      <span id="timeDisplay">0:00 / 0:00</span>
+      <div class="status">
+        <div id="statusDot"></div>
+        <span id="statusText">Paused</span>
+      </div>
+      <div class="vol-group">
+        <span>VOL</span>
+        <input type="range" id="volSlider" min="0" max="1" step="0.01" value="1" />
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const ORIGINAL_PATH = '/input-videos/CC-Lion-Cage-Scene.mp4';
+    const FINAL_PATH    = '/pipeline/output/CC-Lion-Cage-Scene/final_colorized.mp4';
+
+    // ── Build original pane ──────────────────────────────────────────────────
+    const originalContainer = document.getElementById('originalContainer');
+    if (ORIGINAL_PATH && ORIGINAL_PATH !== '__NOT_FOUND__') {
+      const v = document.createElement('video');
+      v.id = 'vidA';
+      v.preload = 'metadata';
+      v.muted = true; // original has no audio; colorized is the primary audio source
+      const s = document.createElement('source');
+      s.src = ORIGINAL_PATH;
+      s.type = 'video/mp4';
+      v.appendChild(s);
+      originalContainer.appendChild(v);
+    } else {
+      originalContainer.innerHTML = `
+        <div class="pane-missing">
+          <div class="icon">&#127909;</div>
+          <div class="msg">Original video not found</div>
+          <div class="msg" style="font-size:0.75rem;margin-top:4px;opacity:.6;">Place it at input-videos/CC-Lion-Cage-Scene.mp4</div>
+        </div>`;
+    }
+
+    // ── Refs ─────────────────────────────────────────────────────────────────
+    const vidB       = document.getElementById('vidB');
+    const vidA       = document.getElementById('vidA'); // may be null
+    const playBtn    = document.getElementById('playBtn');
+    const restartBtn = document.getElementById('restartBtn');
+    const seekBar    = document.getElementById('seekBar');
+    const progressFill = document.getElementById('progressFill');
+    const timeDisplay = document.getElementById('timeDisplay');
+    const volSlider  = document.getElementById('volSlider');
+    const statusDot  = document.getElementById('statusDot');
+    const statusText = document.getElementById('statusText');
+
+    // Primary = colorized (B) — it has audio; secondary = original (A)
+    const primary   = vidB;
+    const secondary = vidA;
+
+    let isSeeking = false;
+    let syncLock  = false;
+
+    function fmt(s) {
+      if (!isFinite(s)) return '0:00';
+      const m  = Math.floor(s / 60);
+      const ss = Math.floor(s % 60).toString().padStart(2, '0');
+      return `${m}:${ss}`;
+    }
+
+    function setStatus(playing) {
+      if (playing) {
+        statusDot.className = 'playing';
+        statusText.textContent = 'Playing';
+        playBtn.innerHTML = '&#9646;&#9646; PAUSE';
+      } else {
+        statusDot.className = '';
+        statusText.textContent = 'Paused';
+        playBtn.innerHTML = '&#9654; PLAY';
+      }
+    }
+
+    function syncSecondary(t) {
+      if (!secondary) return;
+      if (Math.abs(secondary.currentTime - t) > 0.3) {
+        secondary.currentTime = t;
+      }
+    }
+
+    // ── Primary events ───────────────────────────────────────────────────────
+    primary.addEventListener('loadedmetadata', () => {
+      seekBar.max = primary.duration;
+      seekBar.step = 0.001;
+      timeDisplay.textContent = `0:00 / ${fmt(primary.duration)}`;
+    });
+
+    primary.addEventListener('timeupdate', () => {
+      if (isSeeking) return;
+      const t = primary.currentTime;
+      const d = primary.duration || 0;
+      seekBar.value = t;
+      progressFill.style.width = d ? `${(t / d) * 100}%` : '0%';
+      timeDisplay.textContent = `${fmt(t)} / ${fmt(d)}`;
+      syncSecondary(t);
+    });
+
+    primary.addEventListener('play', () => {
+      if (!syncLock && secondary) {
+        syncLock = true;
+        secondary.play().catch(() => {});
+        syncLock = false;
+      }
+      setStatus(true);
+    });
+
+    primary.addEventListener('pause', () => {
+      if (!syncLock && secondary) {
+        syncLock = true;
+        secondary.pause();
+        syncLock = false;
+      }
+      setStatus(false);
+    });
+
+    primary.addEventListener('seeking', () => {
+      if (secondary) secondary.currentTime = primary.currentTime;
+    });
+
+    primary.addEventListener('ended', () => setStatus(false));
+
+    // ── Secondary events (keep them in sync if user clicks secondary) ────────
+    if (secondary) {
+      secondary.addEventListener('play', () => {
+        if (primary.paused && !syncLock) {
+          syncLock = true;
+          primary.play().catch(() => {});
+          syncLock = false;
+        }
+      });
+      secondary.addEventListener('pause', () => {
+        if (!primary.paused && !syncLock) {
+          syncLock = true;
+          primary.pause();
+          syncLock = false;
+        }
+      });
+      secondary.addEventListener('seeking', () => {
+        primary.currentTime = secondary.currentTime;
+      });
+    }
+
+    // ── Controls ─────────────────────────────────────────────────────────────
+    playBtn.addEventListener('click', () => {
+      if (primary.paused) primary.play().catch(() => {});
+      else                primary.pause();
+    });
+
+    restartBtn.addEventListener('click', () => {
+      primary.currentTime = 0;
+      if (secondary) secondary.currentTime = 0;
+      primary.play().catch(() => {});
+    });
+
+    seekBar.addEventListener('mousedown', () => { isSeeking = true; });
+    seekBar.addEventListener('touchstart', () => { isSeeking = true; }, { passive: true });
+
+    seekBar.addEventListener('input', () => {
+      const t = parseFloat(seekBar.value);
+      primary.currentTime = t;
+      if (secondary) secondary.currentTime = t;
+      const d = primary.duration || 1;
+      progressFill.style.width = `${(t / d) * 100}%`;
+    });
+
+    seekBar.addEventListener('mouseup', () => { isSeeking = false; });
+    seekBar.addEventListener('touchend', () => { isSeeking = false; });
+
+    volSlider.addEventListener('input', () => {
+      primary.volume = parseFloat(volSlider.value);
+    });
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      if (e.target.tagName === 'INPUT') return;
+      if (e.code === 'Space') {
+        e.preventDefault();
+        if (primary.paused) primary.play().catch(() => {});
+        else                primary.pause();
+      } else if (e.code === 'ArrowLeft') {
+        primary.currentTime = Math.max(0, primary.currentTime - 5);
+      } else if (e.code === 'ArrowRight') {
+        primary.currentTime = Math.min(primary.duration || 0, primary.currentTime + 5);
+      }
+    });
+  </script>
+
+</body>
+</html>

@@ -15,6 +15,13 @@
 
 set -euo pipefail
 
+# ---- Load .env if present ------------------------------------------------
+SCRIPT_DIR_EARLY="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [[ -f "$SCRIPT_DIR_EARLY/.env" ]]; then
+  # shellcheck source=/dev/null
+  source "$SCRIPT_DIR_EARLY/.env"
+fi
+
 # ---- Args ----------------------------------------------------------------
 VIDEO="${1:?Usage: $0 <video> <gemini_key> <elevenlabs_key> [output.mp3] [--language LANG]}"
 GEMINI_KEY="${2:-${GEMINI_API_KEY:-}}"

@@ -412,3 +412,10 @@ best: yc interview
 gemini: 
 
 can use geminit o also dub films in diff languages
+
+
+
+scenedetect>=0.6.7
+opencv-python>=4.8
+yt-dlp>=2024.1.0
+google-genai>=1.0.0

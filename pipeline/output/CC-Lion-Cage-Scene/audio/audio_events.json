@@ -1,0 +1,242 @@
+[
+  {
+    "timestamp_sec": 0.0,
+    "duration_sec": 1.0,
+    "type": "sfx",
+    "description": "Circus ambience with distant calliope music, muted",
+    "confidence": "medium"
+  },
+  {
+    "timestamp_sec": 0.5,
+    "duration_sec": 0.7,
+    "type": "sfx",
+    "description": "footsteps on gravel",
+    "confidence": "high"
+  },
+  {
+    "timestamp_sec": 1.0,
+    "duration_sec": 0.8,
+    "type": "sfx",
+    "description": "Dog bark in distance",
+    "confidence": "medium"
+  },
+  {
+    "timestamp_sec": 1.8,
+    "duration_sec": 0.5,
+    "type": "sfx",
+    "description": "wooden ladder creak",
+    "confidence": "high"
+  },
+  {
+    "timestamp_sec": 2.1,
+    "duration_sec": 0.5,
+    "type": "sfx",
+    "description": "footsteps on wooden floor inside wagon",
+    "confidence": "high"
+  },
+  {
+    "timestamp_sec": 2.6,
+    "duration_sec": 0.8,
+    "type": "sfx",
+    "description": "heavy cage door creak open",
+    "confidence": "high"
+  },
+  {
+    "timestamp_sec": 2.8,
+    "duration_sec": 0.7,
+    "type": "speech",
+    "character_id": "man_in_vest",
+    "character": "man in a vest",
+    "gender": "male",
+    "utterance": "Just a peek!",
+    "confidence": "medium"
+  },
+  {
+    "timestamp_sec": 3.2,
+    "duration_sec": 0.5,
+    "type": "sfx",
+    "description": "footsteps on wooden floor",
+    "confidence": "high"
+  },
+  {
+    "timestamp_sec": 3.5,
+    "duration_sec": 0.7,
+    "type": "sfx",
+    "description": "heavy cage door slam shut",
+    "confidence": "high"
+  },
+  {
+    "timestamp_sec": 4.0,
+    "duration_sec": 0.7,
+    "type": "sfx",
+    "description": "metal latch click",
+    "confidence": "high"
+  },
+  {
+    "timestamp_sec": 4.5,
+    "duration_sec": 0.8,
+    "type": "speech",
+    "character_id": "man_in_vest",
+    "character": "man in a vest",
+    "gender": "male",
+    "utterance": "Hey! Open up!",
+    "confidence": "high"
+  },
+  {
+    "timestamp_sec": 5.2,
+    "duration_sec": 0.6,
+    "type": "sfx",
+    "description": "cage rattle",
+    "confidence": "medium"
+  },
+  {
+    "timestamp_sec": 5.4,
+    "duration_sec": 0.6,
+    "type": "speech",
+    "character_id": "man_in_vest",
+    "character": "man in a vest",
+    "gender": "male",
+    "utterance": "Help! Let me out!",
+    "confidence": "high"
+  },
+  {
+    "timestamp_sec": 6.5,
+    "duration_sec": 0.5,
+    "type": "sfx",
+    "description": "lion snore",
+    "confidence": "medium"
+  },
+  {
+    "timestamp_sec": 7.0,
+    "duration_sec": 1.0,
+    "type": "speech",
+    "character_id": "man_in_vest",
+    "character": "man in a vest",
+    "gender": "male",
+    "utterance": "Oh my goodness! A lion!",
+    "confidence": "high"
+  },
+  {
+    "timestamp_sec": 7.5,
+    "duration_sec": 0.5,
+    "type": "sfx",
+    "description": "lion growl, low and rumbly",
+    "confidence": "medium"
+  },
+  {
+    "timestamp_sec": 8.0,
+    "duration_sec": 0.5,
+    "type": "sfx",
+    "description": "footsteps, shuffling cautiously",
+    "confidence": "high"
+  },
+  {
+    "timestamp_sec": 9.0,
+    "duration_sec": 0.5,
+    "type": "speech",
+    "character_id": "man_in_vest",
+    "character": "man in a vest",
+    "gender": "male",
+    "utterance": "Easy now, kitty...",
+    "confidence": "high"
+  },
+  {
+    "timestamp_sec": 12.0,
+    "duration_sec": 0.7,
+    "type": "sfx",
+    "description": "lion snore",
+    "confidence": "low"
+  },
+  {
+    "timestamp_sec": 13.0,
+    "duration_sec": 0.5,
+    "type": "sfx",
+    "description": "footsteps, shuffling cautiously",
+    "confidence": "high"
+  },
+  {
+    "timestamp_sec": 14.5,
+    "duration_sec": 0.8,
+    "type": "speech",
+    "character_id": "man_in_vest",
+    "character": "man in a vest",
+    "gender": "male",
+    "utterance": "Please, just let me out!",
+    "confidence": "high"
+  },
+  {
+    "timestamp_sec": 15.8,
+    "duration_sec": 0.5,
+    "type": "sfx",
+    "description": "cage rattle as man bumps into it",
+    "confidence": "medium"
+  },
+  {
+    "timestamp_sec": 17.0,
+    "duration_sec": 0.5,
+    "type": "speech",
+    "character_id": "man_in_vest",
+    "character": "man in a vest",
+    "gender": "male",
+    "utterance": "I'm very sorry!",
+    "confidence": "medium"
+  },
+  {
+    "timestamp_sec": 18.5,
+    "duration_sec": 0.5,
+    "type": "sfx",
+    "description": "metal bars rattling, faint",
+    "confidence": "low"
+  },
+  {
+    "timestamp_sec": 22.0,
+    "duration_sec": 1.0,
+    "type": "sfx",
+    "description": "metal bars creaking and groaning",
+    "confidence": "medium"
+  },
+  {
+    "timestamp_sec": 23.5,
+    "duration_sec": 0.7,
+    "type": "speech",
+    "character_id": "man_in_vest",
+    "character": "man in a vest",
+    "gender": "male",
+    "utterance": "Come on, move!",
+    "confidence": "medium"
+  },
+  {
+    "timestamp_sec": 28.0,
+    "duration_sec": 0.5,
+    "type": "sfx",
+    "description": "Lion Yawn",
+    "confidence": "low"
+  },
+  {
+    "timestamp_sec": 31.0,
+    "duration_sec": 0.7,
+    "type": "speech",
+    "character_id": "man_in_vest",
+    "character": "man in a vest",
+    "gender": "male",
+    "utterance": "Please! Anyone!",
+    "confidence": "high"
+  },
+  {
+    "timestamp_sec": 34.0,
+    "duration_sec": 0.7,
+    "type": "speech",
+    "character_id": "man_in_vest",
+    "character": "man in a vest",
+    "gender": "male",
+    "utterance": "Help! I'm trapped!",
+    "confidence": "high"
+  },
+  {
+    "timestamp_sec": 36.5,
+    "duration_sec": 0.5,
+    "type": "sfx",
+    "description": "cage rattle, faint",
+    "confidence": "low"
+  }
+]
