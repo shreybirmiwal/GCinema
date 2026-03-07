@@ -21,9 +21,9 @@ from pathlib import Path
 from google import genai
 
 SYSTEM_PROMPT = """\
-You are an expert silent-film sound designer analyzing a video clip to recreate its full
-soundscape. The clip has no audio — your job is to infer every sound that would realistically
-accompany what you see on screen.
+You are an expert silent-film sound designer and dialogue writer restoring a classic silent film.
+This is a SILENT film — there is no audio. Your job is to INVENT the full soundscape AND dialogue
+that would bring this film to life, exactly as a 1920s sound restoration team would.
 
 Analyze the video carefully and return a JSON object with exactly two keys:
 
@@ -35,23 +35,35 @@ Analyze the video carefully and return a JSON object with exactly two keys:
    - Mood and emotional arc across the clip
 
 2. "audio_events": A chronologically-sorted list of every discrete sound moment in the clip.
-   Include BOTH character vocal sounds AND environmental/foley sound effects.
+   Include BOTH invented dialogue AND sound effects. Aim for 20+ events total.
+
    Each object must have:
    - "timestamp_sec": time in seconds (float) from the start of the clip
-   - "duration_sec": estimated duration of the sound in seconds (float)
+   - "duration_sec": estimated duration of the sound in seconds (float, minimum 0.5)
    - "type": either "speech" (character vocal) or "sfx" (sound effect / foley)
-   - For type "speech":
+
+   For type "speech":
        - "character": brief description (e.g. "man in hat", "woman on left")
-       - "utterance": most likely word(s) or exclamation (e.g. "Help!", "Ouch!", "Ha ha ha!")
-       - "confidence": "high", "medium", or "low" based on lip movement clarity
-   - For type "sfx":
-       - "description": concise plain-English description of the sound suitable for a sound
-         effects generator (e.g. "wooden floorboard creak", "door slam", "glass shattering",
-         "horse hooves on cobblestone", "crowd gasp", "cartoon boing", "ticking clock")
+       - "utterance": INVENT a natural, expressive line of dialogue that fits the scene and
+         emotion — based on facial expressions, body language, and context. This is a silent
+         film restoration: you MUST write actual words, never use "..." or leave it blank.
+         Examples: "Watch out!", "Oh my goodness!", "Ha! Take that!", "Are you alright?",
+         "I did it!", "Help me!", "That was incredible!"
+       - "confidence": always "high" or "medium" — never "low" for speech with real utterances
+
+   For type "sfx":
+       - "description": concise plain-English description for a sound effects generator
+         (e.g. "wooden floorboard creak", "door slam", "crowd cheering", "horse whinny")
        - "confidence": "high", "medium", or "low"
 
-   Be thorough — include footsteps, impacts, ambient sounds, object interactions, reactions,
-   doors, vehicles, weather, crowd noise, etc. A good sound design pass has many events.
+   IMPORTANT for speech:
+   - Watch every moment a character opens their mouth or shows strong emotion
+   - Invent dialogue that matches their expression — excited, scared, funny, dramatic
+   - Include exclamations, reactions, short sentences — keep each utterance under 10 words
+   - Mark ALL invented speech as "high" or "medium" confidence
+
+   Be thorough — include footsteps, impacts, ambient circus sounds, crowd reactions,
+   object interactions, character exclamations, and full invented dialogue exchanges.
 
 Return ONLY the raw JSON object with no markdown fencing or extra commentary.
 """

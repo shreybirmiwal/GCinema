@@ -88,10 +88,16 @@ def build_track(events: list[dict], duration_ms: int, voice: str, api_key: str) 
         kind  = event.get("type", "sfx")
         conf  = event.get("confidence", "medium")
 
-        # Skip very low confidence events to avoid noise
-        if conf == "low":
-            print(f"  [{i+1}/{len(events)}] Skipping low-confidence {kind} at {ts_ms/1000:.1f}s")
+        # Skip low-confidence SFX to avoid noise
+        # For speech: only skip if the utterance is empty or "..."
+        if kind == "sfx" and conf == "low":
+            print(f"  [{i+1}/{len(events)}] Skipping low-confidence sfx at {ts_ms/1000:.1f}s")
             continue
+        if kind == "speech":
+            utterance = event.get("utterance", "").strip().strip(".")
+            if not utterance:
+                print(f"  [{i+1}/{len(events)}] Skipping empty speech at {ts_ms/1000:.1f}s")
+                continue
 
         try:
             if kind == "speech":
