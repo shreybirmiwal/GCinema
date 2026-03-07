@@ -1,16 +1,31 @@
 #!/usr/bin/env bash
-# Usage: ./new-pipeline.sh <GEMINI_API_KEY> <INPUT_VIDEO>
+# Usage: ./pipeline1-gen-keyframes.sh [GEMINI_API_KEY] <INPUT_VIDEO>
+# If GEMINI_API_KEY is not passed, it will be read from .env or the environment.
 set -euo pipefail
 
-if [[ $# -lt 2 ]]; then
-    echo "Usage: $0 <GEMINI_API_KEY> <INPUT_VIDEO>" >&2
-    exit 1
-fi
-
-API_KEY="$1"
-VIDEO="$(cd "$(dirname "$2")" && pwd)/$(basename "$2")"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
+# Source .env if present
+if [[ -f "$SCRIPT_DIR/.env" ]]; then
+    # shellcheck source=.env
+    source "$SCRIPT_DIR/.env"
+fi
+
+if [[ $# -eq 1 ]]; then
+    if [[ -z "${GEMINI_API_KEY:-}" ]]; then
+        echo "Usage: $0 [GEMINI_API_KEY] <INPUT_VIDEO>" >&2
+        echo "Or set GEMINI_API_KEY in $SCRIPT_DIR/.env" >&2
+        exit 1
+    fi
+    API_KEY="$GEMINI_API_KEY"
+    VIDEO="$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"
+elif [[ $# -ge 2 ]]; then
+    API_KEY="$1"
+    VIDEO="$(cd "$(dirname "$2")" && pwd)/$(basename "$2")"
+else
+    echo "Usage: $0 [GEMINI_API_KEY] <INPUT_VIDEO>" >&2
+    exit 1
+fi
 if [[ ! -f "$VIDEO" ]]; then
     echo "Error: Input video not found: $VIDEO" >&2
     exit 1
@@ -71,9 +86,11 @@ for CLIP in "${CLIPS[@]}"; do
         --api-key "$API_KEY" \
         --output "$SCENE_DIR/description.txt"
 
-    echo "  [3] Extract keyframe..."
+    echo "  [3] Extract keyframes..."
     FRAME="$SCENE_DIR/frame0.png"
+    FRAME2="$SCENE_DIR/frame0_9.png"
     python3 "$SCRIPT_DIR/../video/3-extract-key-frame.py" "$CLIP" --output "$FRAME"
+    python3 "$SCRIPT_DIR/../video/3-extract-key-frame.py" "$CLIP" --skip-seconds 0.9 --output "$FRAME2" || true
 
     if [[ ! -f "$FRAME" ]]; then
         echo "  Warning: keyframe not found, skipping colorization." >&2
@@ -83,6 +100,10 @@ for CLIP in "${CLIPS[@]}"; do
     echo "  [4] Colorize keyframe..."
     COLORIZED="$SCENE_DIR/frame0_colorized.jpg"
     COLORIZE_ARGS=("$FRAME" --api-key "$API_KEY" --output "$COLORIZED")
+    if [[ -f "$FRAME2" ]]; then
+        COLORIZE_ARGS+=(--input2 "$FRAME2")
+        echo "       (using second frame: $FRAME2)"
+    fi
     if [[ -n "$PREV_COLORIZED" && -f "$PREV_COLORIZED" ]]; then
         COLORIZE_ARGS+=(--reference "$PREV_COLORIZED")
         echo "       (using reference: $PREV_COLORIZED)"
