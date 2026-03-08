@@ -63,9 +63,11 @@ SERVER_PID=""
 cleanup() {
     tput cnorm 2>/dev/null || true
     tput rmcup 2>/dev/null || true
-    for pid in "${WORKER_PIDS[@]}"; do
-        kill "$pid" 2>/dev/null || true
-    done
+    if (( ${#WORKER_PIDS[@]} > 0 )); then
+        for pid in "${WORKER_PIDS[@]}"; do
+            kill "$pid" 2>/dev/null || true
+        done
+    fi
     if [[ -n "$SERVER_PID" ]]; then
         kill "$SERVER_PID" 2>/dev/null || true
     fi
@@ -231,11 +233,9 @@ show_gemini_response() {
 show_audio_events_preview() {
     local events_file="$1" max_events="${2:-10}"
     [[ ! -f "$events_file" ]] && return
-    printf '  %b┌─ ✦ AUDIO EVENTS PREVIEW%b\n' "$FG_AMBER$BOLD" "$RST"
-    python3 - "$events_file" "$max_events" <<'PYEOF' 2>/dev/null | \
-        while IFS= read -r line; do
-            printf '  \033[38;5;214m│\033[0m  %s\n' "$line"
-        done
+    local tmppy
+    tmppy="$(mktemp /tmp/gcinema_XXXX.py)"
+    cat > "$tmppy" <<'PYEOF'
 import json, sys
 path, n = sys.argv[1], int(sys.argv[2])
 events = json.load(open(path))[:n]
@@ -245,11 +245,17 @@ for e in events:
     if kind == 'speech':
         char = e.get('character', '?')
         utt  = e.get('utterance', '')
-        print(f"[{ts:>6.2f}s]  SPEECH  {char:<20}  \"{utt}\"")
+        print(f'[{ts:>6.2f}s]  SPEECH  {char:<20}  "{utt}"')
     else:
         desc = e.get('description', '?')
-        print(f"[{ts:>6.2f}s]  SFX     {desc}")
+        print(f'[{ts:>6.2f}s]  SFX     {desc}')
 PYEOF
+    printf '  %b┌─ ✦ AUDIO EVENTS PREVIEW%b\n' "$FG_AMBER$BOLD" "$RST"
+    python3 "$tmppy" "$events_file" "$max_events" 2>/dev/null | \
+        while IFS= read -r line; do
+            printf '  \033[38;5;214m│\033[0m  %s\n' "$line"
+        done
+    rm -f "$tmppy"
     printf '  %b└────────────────────────────────────────%b\n' "$FG_AMBER$DIM" "$RST"
     printf '\n'
 }
