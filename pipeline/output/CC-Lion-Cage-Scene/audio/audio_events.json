@@ -1,242 +1,220 @@
 [
   {
-    "timestamp_sec": 0.0,
-    "duration_sec": 1.0,
-    "type": "sfx",
-    "description": "Circus ambience with distant calliope music, muted",
-    "confidence": "medium"
-  },
-  {
-    "timestamp_sec": 0.5,
-    "duration_sec": 0.7,
-    "type": "sfx",
-    "description": "footsteps on gravel",
-    "confidence": "high"
-  },
-  {
-    "timestamp_sec": 1.0,
-    "duration_sec": 0.8,
-    "type": "sfx",
-    "description": "Dog bark in distance",
-    "confidence": "medium"
-  },
-  {
-    "timestamp_sec": 1.8,
+    "timestamp_sec": 0.2,
     "duration_sec": 0.5,
     "type": "sfx",
-    "description": "wooden ladder creak",
-    "confidence": "high"
-  },
-  {
-    "timestamp_sec": 2.1,
-    "duration_sec": 0.5,
-    "type": "sfx",
-    "description": "footsteps on wooden floor inside wagon",
-    "confidence": "high"
-  },
-  {
-    "timestamp_sec": 2.6,
-    "duration_sec": 0.8,
-    "type": "sfx",
-    "description": "heavy cage door creak open",
-    "confidence": "high"
-  },
-  {
-    "timestamp_sec": 2.8,
-    "duration_sec": 0.7,
-    "type": "speech",
-    "character_id": "man_in_vest",
-    "character": "man in a vest",
-    "gender": "male",
-    "utterance": "Just a peek!",
+    "description": "wooden ladder creaking",
     "confidence": "medium"
   },
   {
-    "timestamp_sec": 3.2,
+    "timestamp_sec": 0.6,
     "duration_sec": 0.5,
     "type": "sfx",
     "description": "footsteps on wooden floor",
-    "confidence": "high"
+    "confidence": "medium"
   },
   {
-    "timestamp_sec": 3.5,
-    "duration_sec": 0.7,
+    "timestamp_sec": 1.2,
+    "duration_sec": 1.0,
     "type": "sfx",
-    "description": "heavy cage door slam shut",
+    "description": "lion sleeping, deep breathing, snore",
+    "confidence": "medium"
+  },
+  {
+    "timestamp_sec": 2.0,
+    "duration_sec": 1.0,
+    "type": "speech",
+    "character_id": "charlie_chaplin",
+    "character": "Charlie Chaplin",
+    "gender": "male",
+    "utterance": "Oh, just a couple of sleepy kitties!",
     "confidence": "high"
   },
   {
     "timestamp_sec": 4.0,
-    "duration_sec": 0.7,
+    "duration_sec": 0.5,
     "type": "sfx",
-    "description": "metal latch click",
-    "confidence": "high"
-  },
-  {
-    "timestamp_sec": 4.5,
-    "duration_sec": 0.8,
-    "type": "speech",
-    "character_id": "man_in_vest",
-    "character": "man in a vest",
-    "gender": "male",
-    "utterance": "Hey! Open up!",
-    "confidence": "high"
+    "description": "footsteps on wooden floor",
+    "confidence": "medium"
   },
   {
     "timestamp_sec": 5.2,
+    "duration_sec": 0.5,
+    "type": "sfx",
+    "description": "footsteps on wooden floor",
+    "confidence": "medium"
+  },
+  {
+    "timestamp_sec": 6.1,
+    "duration_sec": 0.5,
+    "type": "sfx",
+    "description": "footsteps on wooden floor",
+    "confidence": "medium"
+  },
+  {
+    "timestamp_sec": 6.9,
+    "duration_sec": 0.7,
+    "type": "speech",
+    "character_id": "charlie_chaplin",
+    "character": "Charlie Chaplin",
+    "gender": "male",
+    "utterance": "Hmm, this cage is locked.",
+    "confidence": "high"
+  },
+  {
+    "timestamp_sec": 8.5,
+    "duration_sec": 0.5,
+    "type": "sfx",
+    "description": "cage door rattle",
+    "confidence": "medium"
+  },
+  {
+    "timestamp_sec": 9.3,
+    "duration_sec": 0.7,
+    "type": "speech",
+    "character_id": "charlie_chaplin",
+    "character": "Charlie Chaplin",
+    "gender": "male",
+    "utterance": "Oh dear! I'm locked in!",
+    "confidence": "high"
+  },
+  {
+    "timestamp_sec": 9.7,
+    "duration_sec": 0.5,
+    "type": "sfx",
+    "description": "footsteps on wooden floor, frantic",
+    "confidence": "medium"
+  },
+  {
+    "timestamp_sec": 10.5,
+    "duration_sec": 0.7,
+    "type": "speech",
+    "character_id": "charlie_chaplin",
+    "character": "Charlie Chaplin",
+    "gender": "male",
+    "utterance": "Help! Help! Get me out!",
+    "confidence": "high"
+  },
+  {
+    "timestamp_sec": 11.2,
+    "duration_sec": 0.5,
+    "type": "sfx",
+    "description": "cage door rattle",
+    "confidence": "medium"
+  },
+  {
+    "timestamp_sec": 11.9,
     "duration_sec": 0.6,
+    "type": "speech",
+    "character_id": "charlie_chaplin",
+    "character": "Charlie Chaplin",
+    "gender": "male",
+    "utterance": "Hey, is anyone out there?",
+    "confidence": "high"
+  },
+  {
+    "timestamp_sec": 13.4,
+    "duration_sec": 0.5,
     "type": "sfx",
-    "description": "cage rattle",
+    "description": "cage door rattle",
     "confidence": "medium"
   },
   {
-    "timestamp_sec": 5.4,
+    "timestamp_sec": 14.2,
     "duration_sec": 0.6,
     "type": "speech",
-    "character_id": "man_in_vest",
-    "character": "man in a vest",
+    "character_id": "charlie_chaplin",
+    "character": "Charlie Chaplin",
     "gender": "male",
-    "utterance": "Help! Let me out!",
+    "utterance": "Unlock the door, please!",
     "confidence": "high"
   },
   {
-    "timestamp_sec": 6.5,
+    "timestamp_sec": 14.9,
     "duration_sec": 0.5,
     "type": "sfx",
-    "description": "lion snore",
+    "description": "footsteps on wooden floor, frantic",
     "confidence": "medium"
   },
   {
-    "timestamp_sec": 7.0,
-    "duration_sec": 1.0,
-    "type": "speech",
-    "character_id": "man_in_vest",
-    "character": "man in a vest",
-    "gender": "male",
-    "utterance": "Oh my goodness! A lion!",
-    "confidence": "high"
-  },
-  {
-    "timestamp_sec": 7.5,
-    "duration_sec": 0.5,
-    "type": "sfx",
-    "description": "lion growl, low and rumbly",
-    "confidence": "medium"
-  },
-  {
-    "timestamp_sec": 8.0,
-    "duration_sec": 0.5,
-    "type": "sfx",
-    "description": "footsteps, shuffling cautiously",
-    "confidence": "high"
-  },
-  {
-    "timestamp_sec": 9.0,
-    "duration_sec": 0.5,
-    "type": "speech",
-    "character_id": "man_in_vest",
-    "character": "man in a vest",
-    "gender": "male",
-    "utterance": "Easy now, kitty...",
-    "confidence": "high"
-  },
-  {
-    "timestamp_sec": 12.0,
-    "duration_sec": 0.7,
-    "type": "sfx",
-    "description": "lion snore",
-    "confidence": "low"
-  },
-  {
-    "timestamp_sec": 13.0,
-    "duration_sec": 0.5,
-    "type": "sfx",
-    "description": "footsteps, shuffling cautiously",
-    "confidence": "high"
-  },
-  {
-    "timestamp_sec": 14.5,
-    "duration_sec": 0.8,
-    "type": "speech",
-    "character_id": "man_in_vest",
-    "character": "man in a vest",
-    "gender": "male",
-    "utterance": "Please, just let me out!",
-    "confidence": "high"
-  },
-  {
-    "timestamp_sec": 15.8,
-    "duration_sec": 0.5,
-    "type": "sfx",
-    "description": "cage rattle as man bumps into it",
-    "confidence": "medium"
-  },
-  {
-    "timestamp_sec": 17.0,
-    "duration_sec": 0.5,
-    "type": "speech",
-    "character_id": "man_in_vest",
-    "character": "man in a vest",
-    "gender": "male",
-    "utterance": "I'm very sorry!",
-    "confidence": "medium"
-  },
-  {
-    "timestamp_sec": 18.5,
-    "duration_sec": 0.5,
-    "type": "sfx",
-    "description": "metal bars rattling, faint",
-    "confidence": "low"
-  },
-  {
-    "timestamp_sec": 22.0,
-    "duration_sec": 1.0,
-    "type": "sfx",
-    "description": "metal bars creaking and groaning",
-    "confidence": "medium"
-  },
-  {
-    "timestamp_sec": 23.5,
+    "timestamp_sec": 15.3,
     "duration_sec": 0.7,
     "type": "speech",
-    "character_id": "man_in_vest",
-    "character": "man in a vest",
+    "character_id": "charlie_chaplin",
+    "character": "Charlie Chaplin",
     "gender": "male",
-    "utterance": "Come on, move!",
+    "utterance": "I can't get out!",
+    "confidence": "high"
+  },
+  {
+    "timestamp_sec": 16.2,
+    "duration_sec": 0.5,
+    "type": "sfx",
+    "description": "cage door rattle",
     "confidence": "medium"
   },
   {
-    "timestamp_sec": 28.0,
-    "duration_sec": 0.5,
-    "type": "sfx",
-    "description": "Lion Yawn",
-    "confidence": "low"
-  },
-  {
-    "timestamp_sec": 31.0,
+    "timestamp_sec": 17.1,
     "duration_sec": 0.7,
     "type": "speech",
-    "character_id": "man_in_vest",
-    "character": "man in a vest",
+    "character_id": "charlie_chaplin",
+    "character": "Charlie Chaplin",
     "gender": "male",
-    "utterance": "Please! Anyone!",
+    "utterance": "Someone help me!",
     "confidence": "high"
   },
   {
-    "timestamp_sec": 34.0,
+    "timestamp_sec": 21.2,
+    "duration_sec": 0.5,
+    "type": "sfx",
+    "description": "cage door rattle",
+    "confidence": "medium"
+  },
+  {
+    "timestamp_sec": 21.7,
     "duration_sec": 0.7,
     "type": "speech",
-    "character_id": "man_in_vest",
-    "character": "man in a vest",
+    "character_id": "charlie_chaplin",
+    "character": "Charlie Chaplin",
     "gender": "male",
-    "utterance": "Help! I'm trapped!",
+    "utterance": "I'm stuck in here!",
     "confidence": "high"
   },
   {
-    "timestamp_sec": 36.5,
+    "timestamp_sec": 23.7,
+    "duration_sec": 0.7,
+    "type": "speech",
+    "character_id": "charlie_chaplin",
+    "character": "Charlie Chaplin",
+    "gender": "male",
+    "utterance": "Let me out of here!",
+    "confidence": "high"
+  },
+  {
+    "timestamp_sec": 26.8,
+    "duration_sec": 0.7,
+    "type": "speech",
+    "character_id": "charlie_chaplin",
+    "character": "Charlie Chaplin",
+    "gender": "male",
+    "utterance": "Help! Trapped!",
+    "confidence": "high"
+  },
+  {
+    "timestamp_sec": 30.1,
     "duration_sec": 0.5,
     "type": "sfx",
-    "description": "cage rattle, faint",
-    "confidence": "low"
+    "description": "cage door rattle",
+    "confidence": "medium"
+  },
+  {
+    "timestamp_sec": 32.3,
+    "duration_sec": 0.7,
+    "type": "speech",
+    "character_id": "charlie_chaplin",
+    "character": "Charlie Chaplin",
+    "gender": "male",
+    "utterance": "Please, someone open this!",
+    "confidence": "high"
   }
 ]

@@ -183,11 +183,11 @@ log_error() {
     printf '  %b✘%b  %s\n' "$FG_RED$BOLD" "$RST" "$msg" >&2
 }
 
-# Arrow-key selection menu. Returns selected index via global SEL_RESULT.
-# Usage: arrow_select "Prompt" option1 option2 ... [--disabled N]
-# Disabled indices (0-based) are passed after --disabled
+# Number input selection. Returns selected index (0-based) via global SEL_RESULT.
+# Usage: number_select "Prompt" option1 option2 ... [--disabled N]
+# Disabled indices are not shown as selectable.
 SEL_RESULT=0
-arrow_select() {
+number_select() {
     local prompt="$1"; shift
     local -a options=()
     local -a disabled=()
@@ -205,85 +205,46 @@ arrow_select() {
         fi
     done
 
-    local selected=0
     local count=${#options[@]}
-
-    is_disabled() {
-        local idx="$1"
-        for d in "${disabled[@]}"; do
-            if (( d == idx )); then return 0; fi
-        done
-        return 1
-    }
-
-    # Find first non-disabled option
-    while is_disabled $selected && (( selected < count - 1 )); do
-        (( selected++ ))
-    done
-
-    tput civis
+    local choice=""
 
     while true; do
-        # Render
-        printf '\033[?25l'
-        tput cup 0 0 2>/dev/null || printf '\033[H'
-        tput ed 2>/dev/null || printf '\033[J'
-
         printf '\n'
         printf '  %b%s%b\n' "$FG_GOLD$BOLD" "$prompt" "$RST"
         printf '\n'
 
+        local num=1
         for i in $(seq 0 $((count - 1))); do
-            if is_disabled "$i"; then
-                if (( i == selected )); then
-                    printf '  %b▸ %s%b\n' "$FG_GRAY$DIM" "${options[$i]}" "$RST"
-                else
-                    printf '    %b%s%b\n' "$FG_GRAY$DIM" "${options[$i]}" "$RST"
-                fi
-            elif (( i == selected )); then
-                printf '  %b▸ %s%b\n' "$FG_CYAN$BOLD" "${options[$i]}" "$RST"
+            local is_disabled=false
+            for d in "${disabled[@]}"; do
+                if (( d == i )); then is_disabled=true; break; fi
+            done
+            if $is_disabled; then
+                printf '    %b%d. %s%b\n' "$FG_GRAY$DIM" "$num" "${options[$i]}" "$RST"
             else
-                printf '    %s\n' "${options[$i]}"
+                printf '    %b%d.%b %s\n' "$FG_CYAN" "$num" "$RST" "${options[$i]}"
             fi
+            (( num++ ))
         done
 
         printf '\n'
-        printf '  %b↑/↓ navigate  ·  enter select%b\n' "$FG_GRAY" "$RST"
-
-        # Read key
-        IFS= read -rsn1 key
-        if [[ "$key" == $'\x1b' ]]; then
-            read -rsn2 -t 0.1 rest || true
-            key+="$rest"
-        fi
-
-        case "$key" in
-            $'\x1b[A'|$'\x1bOA')  # Up
-                local next=$selected
-                while true; do
-                    (( next-- )) || true
-                    if (( next < 0 )); then next=$((count - 1)); fi
-                    if (( next == selected )); then break; fi
-                    if ! is_disabled "$next"; then selected=$next; break; fi
+        printf '  %bEnter choice [1-%d]:%b ' "$FG_GOLD" "$count" "$RST"
+        read -r choice
+        choice="${choice//[^0-9]/}"
+        if [[ -n "$choice" ]]; then
+            local idx=$((choice - 1))
+            if (( idx >= 0 && idx < count )); then
+                local is_disabled=false
+                for d in "${disabled[@]}"; do
+                    if (( d == idx )); then is_disabled=true; break; fi
                 done
-                ;;
-            $'\x1b[B'|$'\x1bOB')  # Down
-                local next=$selected
-                while true; do
-                    (( next++ )) || true
-                    if (( next >= count )); then next=0; fi
-                    if (( next == selected )); then break; fi
-                    if ! is_disabled "$next"; then selected=$next; break; fi
-                done
-                ;;
-            '')  # Enter
-                if ! is_disabled "$selected"; then
-                    SEL_RESULT=$selected
-                    tput cnorm
+                if ! $is_disabled; then
+                    SEL_RESULT=$idx
                     return
                 fi
-                ;;
-        esac
+            fi
+        fi
+        printf '  %bInvalid. Try again.%b\n' "$FG_RED" "$RST"
     done
 }
 
@@ -335,7 +296,7 @@ printf '  %bPress any key to continue...%b' "$FG_GRAY" "$RST"
 IFS= read -rsn1 _
 clear
 
-arrow_select "Select input video" "${VIDEO_LABELS[@]}" --disabled "${DISABLED_INDICES[@]}"
+number_select "Select input video" "${VIDEO_LABELS[@]}" --disabled "${DISABLED_INDICES[@]}"
 CHOSEN_IDX=$SEL_RESULT
 VIDEO="${VIDEO_FILES[$CHOSEN_IDX]}"
 STEM="$(basename "$VIDEO" .mp4)"
@@ -785,92 +746,6 @@ else
 
     rm -f "$CONCAT_LIST"
 
-    # Write viewer HTML
-    VIEWER_HTML="$OUTPUT_DIR/viewer.html"
-    ORIGINAL_VIDEO="$PROJECT_DIR/input-videos/$STEM.mp4"
-    ORIG_REL=""
-    if [[ -f "$ORIGINAL_VIDEO" ]]; then
-        ORIG_REL="$(python3 -c "import os; print(os.path.relpath('$ORIGINAL_VIDEO', '$PROJECT_DIR'))")"
-    fi
-    FINAL_REL="$(python3 -c "import os; print(os.path.relpath('$FINAL_VIDEO', '$PROJECT_DIR'))")"
-
-    cat > "$VIEWER_HTML" << 'HTMLEOF'
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>GCinema — __STEM__</title>
-<style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{--bg:#080808;--accent:#c8a96e;--text:#e0d4c0;--dim:#555;--border:#1e1e1e;--green:#5ec87a}
-html,body{height:100%;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,sans-serif}
-body{display:flex;flex-direction:column}
-header{padding:16px 32px;border-bottom:1px solid var(--border);display:flex;align-items:baseline;gap:14px}
-header h1{font-size:1.3rem;color:var(--accent);letter-spacing:.12em}
-header .stem{color:var(--dim);font-size:.9rem}
-.videos{display:flex;flex:1;padding:16px 32px;gap:24px;min-height:0}
-.pane{flex:1;display:flex;flex-direction:column;min-width:0}
-.pane-label{font-size:.7rem;letter-spacing:.15em;text-transform:uppercase;color:var(--dim);margin-bottom:6px}
-video{width:100%;aspect-ratio:16/9;object-fit:contain;background:#000;border:1px solid var(--border)}
-.controls{padding:12px 32px 24px;display:flex;flex-direction:column;gap:10px}
-.prog{position:relative;height:5px;background:var(--border);border-radius:3px;cursor:pointer}
-.prog-fill{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,var(--accent),#e8c98a);border-radius:3px;width:0%}
-#seek{position:absolute;inset:-5px 0;width:100%;opacity:0;cursor:pointer}
-.btns{display:flex;align-items:center;gap:10px}
-button{background:0;border:1px solid var(--accent);color:var(--accent);font-size:.7rem;letter-spacing:.15em;padding:6px 16px;cursor:pointer}
-button:hover{background:var(--accent);color:var(--bg)}
-#time{font-size:.8rem;color:var(--dim);font-variant-numeric:tabular-nums;min-width:80px}
-.vol{margin-left:auto;display:flex;align-items:center;gap:6px;color:var(--dim);font-size:.7rem}
-#vol{width:70px}
-</style>
-</head>
-<body>
-<header><h1>GCinema</h1><span class="stem">__STEM__</span></header>
-<div class="videos">
-<div class="pane"><div class="pane-label">Original (B&amp;W)</div><video id="a" muted preload="metadata"><source src="__ORIG__" type="video/mp4"/></video></div>
-<div class="pane"><div class="pane-label">Colorized</div><video id="b" preload="metadata"><source src="__FINAL__" type="video/mp4"/></video></div>
-</div>
-<div class="controls">
-<div class="prog"><div class="prog-fill" id="fill"></div><input type="range" id="seek" min="0" step=".001" value="0"/></div>
-<div class="btns">
-<button id="pp">&#9654; PLAY</button>
-<button id="re">&#8635; RESTART</button>
-<span id="time">0:00 / 0:00</span>
-<div class="vol"><span>VOL</span><input type="range" id="vol" min="0" max="1" step=".01" value="1"/></div>
-</div>
-</div>
-<script>
-const a=document.getElementById('a'),b=document.getElementById('b'),pp=document.getElementById('pp'),
-re=document.getElementById('re'),sk=document.getElementById('seek'),fl=document.getElementById('fill'),
-tm=document.getElementById('time'),vl=document.getElementById('vol');
-let seeking=false;
-const fmt=s=>{if(!isFinite(s))return'0:00';return Math.floor(s/60)+':'+String(Math.floor(s%60)).padStart(2,'0')};
-b.addEventListener('loadedmetadata',()=>{sk.max=b.duration;tm.textContent='0:00 / '+fmt(b.duration)});
-b.addEventListener('timeupdate',()=>{if(seeking)return;sk.value=b.currentTime;fl.style.width=b.duration?(b.currentTime/b.duration*100)+'%':'0%';tm.textContent=fmt(b.currentTime)+' / '+fmt(b.duration);if(Math.abs(a.currentTime-b.currentTime)>.3)a.currentTime=b.currentTime});
-b.addEventListener('play',()=>{a.play().catch(()=>{});pp.innerHTML='&#9646;&#9646; PAUSE'});
-b.addEventListener('pause',()=>{a.pause();pp.innerHTML='&#9654; PLAY'});
-b.addEventListener('seeking',()=>{a.currentTime=b.currentTime});
-pp.onclick=()=>{b.paused?b.play().catch(()=>{}):b.pause()};
-re.onclick=()=>{b.currentTime=0;a.currentTime=0;b.play().catch(()=>{})};
-sk.addEventListener('mousedown',()=>{seeking=true});
-sk.addEventListener('input',()=>{b.currentTime=a.currentTime=parseFloat(sk.value);fl.style.width=(sk.value/(b.duration||1)*100)+'%'});
-sk.addEventListener('mouseup',()=>{seeking=false});
-vl.addEventListener('input',()=>{b.volume=parseFloat(vl.value)});
-document.addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;if(e.code==='Space'){e.preventDefault();b.paused?b.play().catch(()=>{}):b.pause()}else if(e.code==='ArrowLeft')b.currentTime=Math.max(0,b.currentTime-5);else if(e.code==='ArrowRight')b.currentTime=Math.min(b.duration||0,b.currentTime+5)});
-</script>
-</body>
-</html>
-HTMLEOF
-
-    ORIG_PLACEHOLDER="${ORIG_REL:-__NOT_FOUND__}"
-    sed -i '' \
-        -e "s|__STEM__|${STEM}|g" \
-        -e "s|__ORIG__|${ORIG_PLACEHOLDER}|g" \
-        -e "s|__FINAL__|${FINAL_REL}|g" \
-        "$VIEWER_HTML"
-
-    log_success "Viewer HTML written"
 fi
 
 printf '\n'
@@ -905,41 +780,24 @@ printf '\n'
 
 # Final menu
 FINAL_OPTIONS=(
-    "Open in browser (localhost:8765)"
+    "Open both videos (original + colorized)"
     "Quit"
 )
-arrow_select "What would you like to do?" "${FINAL_OPTIONS[@]}"
+number_select "What would you like to do?" "${FINAL_OPTIONS[@]}"
 
 if (( SEL_RESULT == 0 )); then
-    PORT=8765
-    VIEWER_REL="$(python3 -c "import os; print(os.path.relpath('$VIEWER_HTML', '$PROJECT_DIR'))")"
-
-    lsof -ti "tcp:$PORT" 2>/dev/null | xargs kill -9 2>/dev/null || true
-    sleep 0.3
-
     printf '\n'
-    log_step "▶" "Starting server on http://localhost:${PORT}"
-
-    cd "$PROJECT_DIR"
-    python3 -m http.server "$PORT" &
-    SERVER_PID=$!
-    sleep 0.5
-
-    VIEWER_URL="http://localhost:${PORT}/${VIEWER_REL}"
-    open "$VIEWER_URL" 2>/dev/null \
-        || xdg-open "$VIEWER_URL" 2>/dev/null \
-        || log_detail "Open in your browser: $VIEWER_URL"
-
-    printf '\n'
-    log_success "Viewer open at $VIEWER_URL"
-    printf '\n'
-    printf '  %bPress Ctrl+C to stop the server and exit.%b\n' "$FG_GRAY" "$RST"
-    printf '\n'
-
-    trap 'printf "\n"; log_detail "Shutting down..."; kill "$SERVER_PID" 2>/dev/null; exit 0' INT TERM
-    wait "$SERVER_PID"
+    log_step "▶" "Opening videos in default player..."
+    ORIGINAL_VIDEO="$PROJECT_DIR/input-videos/$STEM.mp4"
+    if [[ -f "$ORIGINAL_VIDEO" ]]; then
+        open "$ORIGINAL_VIDEO" 2>/dev/null || xdg-open "$ORIGINAL_VIDEO" 2>/dev/null || log_detail "Original: $ORIGINAL_VIDEO"
+    fi
+    if [[ -f "${FINAL_VIDEO:-}" ]]; then
+        open "$FINAL_VIDEO" 2>/dev/null || xdg-open "$FINAL_VIDEO" 2>/dev/null || log_detail "Colorized: $FINAL_VIDEO"
+    fi
+    log_success "Videos opened"
 else
     printf '\n'
     log_success "Done. Output at: $OUTPUT_DIR"
-    printf '\n'
 fi
+printf '\n'
