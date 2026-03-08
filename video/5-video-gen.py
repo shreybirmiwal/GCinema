@@ -89,7 +89,7 @@ def generate_video(
             timeout=30,
         )
 
-        if poll_resp.status_code != 200:
+        if poll_resp.status_code not in (200, 202):
             print()
             raise RuntimeError(
                 f"Poll error {poll_resp.status_code}: {poll_resp.text}"
