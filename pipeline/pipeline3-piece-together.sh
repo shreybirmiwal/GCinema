@@ -87,11 +87,13 @@ for clip in "${MATCHED_CLIPS[@]}"; do
     echo "  + $(basename "$(dirname "$clip")")/$(basename "$clip")"
 done
 
-# ── Step 1: Concatenate scene clips ───────────────────────────────────────────
+# ── Step 1: Concatenate scene clips (re-encode to CFR for compatibility) ──────
 echo ""
 echo "=== Concatenating ${#MATCHED_CLIPS[@]} scene clips ==="
 CONCAT_VIDEO="$OUTPUT_DIR/concat_no_audio.mp4"
-ffmpeg -y -f concat -safe 0 -i "$CONCAT_LIST" -c:v copy -an -movflags +faststart "$CONCAT_VIDEO" 2>&1 \
+ffmpeg -y -f concat -safe 0 -i "$CONCAT_LIST" \
+    -filter_complex "[0:v]setpts=PTS-STARTPTS,format=yuv420p,fps=24[v]" \
+    -map "[v]" -c:v libx264 -preset fast -crf 18 -an -movflags +faststart "$CONCAT_VIDEO" 2>&1 \
     | grep -E "(Output|Error|frame=|fps=|time=)" || true
 echo "Concat done: $CONCAT_VIDEO"
 read -r -p "  [Step 1 done] Verify concat locally? Press Enter to continue, or Ctrl+C to stop... " _

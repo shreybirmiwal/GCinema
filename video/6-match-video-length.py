@@ -56,6 +56,8 @@ def match_length(original: Path, colorized: Path, output: Path) -> None:
         "ffmpeg", "-y",
         "-i", str(colorized),
         "-vf", vf,
+        "-c:v", "libx264", "-preset", "fast", "-crf", "18",
+        "-r", "24", "-pix_fmt", "yuv420p",
     ]
 
     if has_audio_stream(colorized):

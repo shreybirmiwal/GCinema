@@ -718,7 +718,9 @@ else
     done
 
     CONCAT_VIDEO="$OUTPUT_DIR/concat_no_audio.mp4"
-    ffmpeg -y -f concat -safe 0 -i "$CONCAT_LIST" -c:v copy -an "$CONCAT_VIDEO" 2>/dev/null
+    ffmpeg -y -f concat -safe 0 -i "$CONCAT_LIST" \
+        -filter_complex "[0:v]setpts=PTS-STARTPTS,format=yuv420p,fps=24[v]" \
+        -map "[v]" -c:v libx264 -preset fast -crf 18 -an -movflags +faststart "$CONCAT_VIDEO" 2>/dev/null
     log_success "Scenes concatenated"
 
     printf '\n'

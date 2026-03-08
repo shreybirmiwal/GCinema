@@ -1,0 +1,193 @@
+[
+  {
+    "timestamp_sec": 0.0,
+    "duration_sec": 0.7,
+    "type": "sfx",
+    "description": "circus ambience, distant calliope",
+    "confidence": "low"
+  },
+  {
+    "timestamp_sec": 0.4,
+    "duration_sec": 0.5,
+    "type": "sfx",
+    "description": "footsteps running on dirt",
+    "confidence": "high"
+  },
+  {
+    "timestamp_sec": 2.9,
+    "duration_sec": 0.7,
+    "type": "sfx",
+    "description": "wooden steps creak as person climbs",
+    "confidence": "high"
+  },
+  {
+    "timestamp_sec": 4.1,
+    "duration_sec": 0.5,
+    "type": "sfx",
+    "description": "wooden steps creak as person walks off",
+    "confidence": "high"
+  },
+  {
+    "timestamp_sec": 7.2,
+    "duration_sec": 0.5,
+    "type": "sfx",
+    "description": "footsteps running on dirt",
+    "confidence": "high"
+  },
+  {
+    "timestamp_sec": 16.1,
+    "duration_sec": 0.6,
+    "type": "sfx",
+    "description": "pole creaking softly",
+    "confidence": "low"
+  },
+  {
+    "timestamp_sec": 17.0,
+    "duration_sec": 1.0,
+    "type": "sfx",
+    "description": "creaking leather, someone shifting position on pole",
+    "confidence": "low"
+  },
+  {
+    "timestamp_sec": 21.5,
+    "duration_sec": 0.5,
+    "type": "speech",
+    "character_id": "woman_in_skirt",
+    "character": "Woman in skirt",
+    "gender": "female",
+    "utterance": "Oh my!",
+    "confidence": "high"
+  },
+  {
+    "timestamp_sec": 25.0,
+    "duration_sec": 0.7,
+    "type": "speech",
+    "character_id": "woman_in_skirt",
+    "character": "Woman in skirt",
+    "gender": "female",
+    "utterance": "Be careful up there!",
+    "confidence": "medium"
+  },
+  {
+    "timestamp_sec": 31.9,
+    "duration_sec": 0.5,
+    "type": "speech",
+    "character_id": "man_in_overalls",
+    "character": "Man in overalls",
+    "gender": "male",
+    "utterance": "Whoa!",
+    "confidence": "medium"
+  },
+  {
+    "timestamp_sec": 32.0,
+    "duration_sec": 1.0,
+    "type": "sfx",
+    "description": "pole creaking loudly",
+    "confidence": "high"
+  },
+  {
+    "timestamp_sec": 35.1,
+    "duration_sec": 0.5,
+    "type": "speech",
+    "character_id": "man_in_overalls",
+    "character": "Man in overalls",
+    "gender": "male",
+    "utterance": "Hold on tight!",
+    "confidence": "high"
+  },
+  {
+    "timestamp_sec": 36.9,
+    "duration_sec": 0.8,
+    "type": "sfx",
+    "description": "leather belt creaking",
+    "confidence": "low"
+  },
+  {
+    "timestamp_sec": 38.2,
+    "duration_sec": 0.6,
+    "type": "speech",
+    "character_id": "man_in_overalls",
+    "character": "Man in overalls",
+    "gender": "male",
+    "utterance": "Ta-da!",
+    "confidence": "high"
+  },
+  {
+    "timestamp_sec": 41.8,
+    "duration_sec": 0.7,
+    "type": "sfx",
+    "description": "distant clapping",
+    "confidence": "low"
+  },
+  {
+    "timestamp_sec": 45.8,
+    "duration_sec": 0.6,
+    "type": "speech",
+    "character_id": "woman_in_skirt",
+    "character": "Woman in skirt",
+    "gender": "female",
+    "utterance": "Bravo! Bravo!",
+    "confidence": "high"
+  },
+  {
+    "timestamp_sec": 48.7,
+    "duration_sec": 0.5,
+    "type": "speech",
+    "character_id": "man_in_overalls",
+    "character": "Man in overalls",
+    "gender": "male",
+    "utterance": "Look at this!",
+    "confidence": "high"
+  },
+  {
+    "timestamp_sec": 56.4,
+    "duration_sec": 0.5,
+    "type": "sfx",
+    "description": "thud of landing on soft ground",
+    "confidence": "high"
+  },
+  {
+    "timestamp_sec": 57.0,
+    "duration_sec": 0.7,
+    "type": "speech",
+    "character_id": "man_in_overalls",
+    "character": "Man in overalls",
+    "gender": "male",
+    "utterance": "I made it!",
+    "confidence": "high"
+  },
+  {
+    "timestamp_sec": 58.3,
+    "duration_sec": 0.5,
+    "type": "speech",
+    "character_id": "woman_in_skirt",
+    "character": "Woman in skirt",
+    "gender": "female",
+    "utterance": "Amazing!",
+    "confidence": "medium"
+  },
+  {
+    "timestamp_sec": 59.2,
+    "duration_sec": 0.5,
+    "type": "speech",
+    "character_id": "man_in_overalls",
+    "character": "Man in overalls",
+    "gender": "male",
+    "utterance": "For you!",
+    "confidence": "medium"
+  },
+  {
+    "timestamp_sec": 61.0,
+    "duration_sec": 0.7,
+    "type": "sfx",
+    "description": "Footsteps on the grass.",
+    "confidence": "medium"
+  },
+  {
+    "timestamp_sec": 109.4,
+    "duration_sec": 0.9,
+    "type": "sfx",
+    "description": "Circus sounds fading out.",
+    "confidence": "low"
+  }
+]
