@@ -6,7 +6,6 @@ __pycache__/
 venv/
 
 # Pipeline outputs
-*.mp4
 *.webm
 *.mkv
 *.part
