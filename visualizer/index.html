@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GCinema — Video Comparison</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #0a0a0a;
+      color: #fff;
+      font-family: 'Georgia', serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 24px;
+      gap: 20px;
+    }
+
+    h1 {
+      font-size: 1.4rem;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: #c8a96e;
+      font-weight: normal;
+    }
+
+    /* ── Viewer wrapper keeps 16:9 ── */
+    .viewer-wrap {
+      position: relative;
+      width: 100%;
+      max-width: 960px;
+    }
+
+    .aspect-box {
+      position: relative;
+      width: 100%;
+      padding-top: 56.25%; /* 9/16 */
+      overflow: hidden;
+      border-radius: 6px;
+      box-shadow: 0 0 60px rgba(200, 169, 110, 0.15), 0 0 0 1px rgba(255,255,255,0.06);
+      cursor: col-resize;
+      user-select: none;
+    }
+
+    /* Both videos fill the box absolutely */
+    video {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* Video 1 (Original) sits on top, clipped to left portion */
+    #video1 {
+      z-index: 2;
+      clip-path: inset(0 50% 0 0);  /* updated by JS */
+    }
+
+    /* Video 2 (Colorized) behind, always full */
+    #video2 {
+      z-index: 1;
+    }
+
+    /* ── Slider line (diagonal) ── */
+    .slider-line {
+      position: absolute;
+      /* JS sets left; line is tall enough to cover the full diagonal */
+      top: 50%;
+      left: 50%;
+      width: 2px;
+      height: 200%;
+      background: rgba(255, 255, 255, 0.85);
+      z-index: 10;
+      /* translateX centers the 2px line; translateY centers vertically;
+         rotate makes it diagonal — angle matches the polygon clip offset */
+      transform: translateX(-50%) translateY(-50%) rotate(var(--diag-angle, 20deg));
+      pointer-events: none;
+    }
+
+    /* ── Slider handle ── */
+    .slider-handle {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 44px;
+      height: 44px;
+      background: #fff;
+      border-radius: 50%;
+      z-index: 11;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 14px rgba(0,0,0,0.55);
+      pointer-events: none;
+    }
+
+    .slider-handle svg {
+      width: 22px;
+      height: 22px;
+      fill: #333;
+    }
+
+    /* ── Big play overlay ── */
+    .play-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,0.35);
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .play-overlay.hidden { display: none; }
+
+    .play-overlay-btn {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.15);
+      border: 2px solid rgba(255,255,255,0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(4px);
+      transition: transform 0.15s, background 0.15s;
+    }
+
+    .play-overlay:hover .play-overlay-btn {
+      transform: scale(1.1);
+      background: rgba(200,169,110,0.25);
+      border-color: #c8a96e;
+    }
+
+    .play-overlay-btn svg {
+      width: 32px;
+      height: 32px;
+      fill: #fff;
+      margin-left: 4px; /* optical center for triangle */
+    }
+
+    /* ── Labels ── */
+    .label {
+      position: absolute;
+      bottom: 14px;
+      z-index: 12;
+      font-size: 0.72rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      background: rgba(0,0,0,0.55);
+      padding: 4px 10px;
+      border-radius: 3px;
+      pointer-events: none;
+    }
+
+    .label-left  { left: 14px;  color: #ccc; }
+    .label-right { right: 14px; color: #c8a96e; }
+
+    /* ── Controls bar ── */
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    button {
+      background: #1a1a1a;
+      border: 1px solid rgba(255,255,255,0.12);
+      color: #fff;
+      padding: 8px 20px;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      letter-spacing: 0.08em;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    button:hover { background: #2a2a2a; border-color: #c8a96e; }
+
+    .time-display {
+      font-size: 0.78rem;
+      color: #777;
+      letter-spacing: 0.06em;
+      min-width: 110px;
+      text-align: center;
+    }
+
+    /* ── Progress bar ── */
+    .progress-wrap {
+      width: 100%;
+      max-width: 960px;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 4px;
+      appearance: none;
+      background: #222;
+      border-radius: 2px;
+      cursor: pointer;
+      outline: none;
+    }
+
+    .progress-bar::-webkit-slider-thumb {
+      appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #c8a96e;
+      cursor: pointer;
+      margin-top: -5px;
+    }
+
+    .progress-bar::-webkit-slider-runnable-track {
+      height: 4px;
+      border-radius: 2px;
+      background: linear-gradient(
+        to right,
+        #c8a96e var(--progress, 0%),
+        #333 var(--progress, 0%)
+      );
+    }
+
+    /* file picker hint */
+    .file-row {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .file-row label {
+      font-size: 0.72rem;
+      color: #888;
+      letter-spacing: 0.08em;
+    }
+
+    .file-row input[type=file] {
+      font-size: 0.72rem;
+      color: #aaa;
+      background: #111;
+      border: 1px solid #333;
+      border-radius: 3px;
+      padding: 4px 8px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>GCinema — Colorization Comparison</h1>
+
+  <!-- ── Viewer ── -->
+  <div class="viewer-wrap">
+    <div class="aspect-box" id="viewerBox">
+
+      <!-- Video 2 (AI Colorized) — full, behind -->
+      <video id="video2" loop playsinline>
+        <source src="pipeline/output/CC-Girl-Scene/final_colorized.mp4" type="video/mp4" />
+      </video>
+
+      <!-- Video 1 (Original B&W) — clipped to left slice, on top -->
+      <video id="video1" loop playsinline>
+        <source src="input-videos/CC-Girl-Scene.mp4" type="video/mp4" />
+      </video>
+
+      <!-- Divider -->
+      <div class="slider-line" id="sliderLine">
+        <div class="slider-handle">
+          <!-- left-right arrows -->
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M8 12l-4-4v3H1v2h3v3l4-4zm8 0l4 4v-3h3v-2h-3V8l-4 4z"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- Labels -->
+      <div class="label label-left">Original</div>
+      <div class="label label-right">AI Colorized</div>
+
+    </div>
+  </div>
+
+  <!-- ── Progress ── -->
+  <div class="progress-wrap">
+    <input type="range" class="progress-bar" id="progressBar" min="0" max="1000" value="0" step="1" />
+  </div>
+
+  <!-- ── Controls ── -->
+  <div class="controls">
+    <button id="btnPlayPause">▶ Play</button>
+    <button id="btnRestart">↺ Restart</button>
+    <div class="time-display" id="timeDisplay">0:00 / 0:00</div>
+    <button id="btnMute">🔇 Mute</button>
+    <button id="btnOscillate">⇄ Auto</button>
+  </div>
+
+  <!-- ── File pickers (optional custom videos) ── -->
+  <div class="file-row">
+    <label>Original video:</label>
+    <input type="file" id="fileOriginal" accept="video/*" />
+    <label>Colorized video:</label>
+    <input type="file" id="fileColorized" accept="video/*" />
+  </div>
+
+<script>
+  const v1 = document.getElementById('video1');
+  const v2 = document.getElementById('video2');
+  const box = document.getElementById('viewerBox');
+  const line = document.getElementById('sliderLine');
+  const progress = document.getElementById('progressBar');
+  const btnPP = document.getElementById('btnPlayPause');
+  const btnRestart = document.getElementById('btnRestart');
+  const btnMute = document.getElementById('btnMute');
+  const timeDisp = document.getElementById('timeDisplay');
+
+  let sliderPct = 50; // percent from left
+  let dragging = false;
+
+  // Half the horizontal distance (in % of width) between where the
+  // diagonal line crosses the top edge vs the bottom edge.
+  // In a 16:9 box: angle = atan(2*DIAG_OFFSET/100 / (9/16)) ≈ 20 deg
+  const DIAG_OFFSET = 10;
+
+  // ── Apply diagonal clip-path ─────────────────────────────────
+  function applySlider(pct) {
+    sliderPct = Math.max(0, Math.min(100, pct));
+    // Top of divider line is DIAG_OFFSET% to the RIGHT of center
+    // Bottom of divider line is DIAG_OFFSET% to the LEFT of center
+    // This makes the line lean left→right as you look top→bottom
+    const topX    = sliderPct + DIAG_OFFSET;
+    const bottomX = sliderPct - DIAG_OFFSET;
+    v1.style.clipPath = `polygon(0 0, ${topX}% 0, ${bottomX}% 100%, 0 100%)`;
+    line.style.left = sliderPct + '%';
+  }
+
+  applySlider(50);
+
+  // ── Pointer events for dragging ──────────────────────────────
+  function pctFromEvent(e) {
+    const rect = box.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    return ((clientX - rect.left) / rect.width) * 100;
+  }
+
+  box.addEventListener('pointerdown', (e) => {
+    dragging = true;
+    box.setPointerCapture(e.pointerId);
+    applySlider(pctFromEvent(e));
+  });
+
+  box.addEventListener('pointermove', (e) => {
+    if (!dragging) return;
+    applySlider(pctFromEvent(e));
+  });
+
+  box.addEventListener('pointerup',   () => { dragging = false; });
+  box.addEventListener('pointercancel', () => { dragging = false; });
+
+  // ── Sync videos ───────────────────────────────────────────────
+  let syncing = false;
+
+  function syncV2toV1() {
+    if (syncing) return;
+    if (Math.abs(v1.currentTime - v2.currentTime) > 0.1) {
+      syncing = true;
+      v2.currentTime = v1.currentTime;
+      syncing = false;
+    }
+  }
+
+  v1.addEventListener('timeupdate', () => {
+    syncV2toV1();
+    updateProgress();
+  });
+
+  v1.addEventListener('play',  () => { v2.play();  btnPP.textContent = '⏸ Pause'; });
+  v1.addEventListener('pause', () => { v2.pause(); btnPP.textContent = '▶ Play'; });
+  v1.addEventListener('seeking', () => { v2.currentTime = v1.currentTime; });
+
+  // ── Controls ──────────────────────────────────────────────────
+  btnPP.addEventListener('click', () => {
+    v1.paused ? v1.play() : v1.pause();
+  });
+
+  btnRestart.addEventListener('click', () => {
+    v1.currentTime = 0;
+    v2.currentTime = 0;
+    v1.play();
+  });
+
+  let muted = false;
+  btnMute.addEventListener('click', () => {
+    muted = !muted;
+    v1.muted = muted;
+    v2.muted = muted;
+    btnMute.textContent = muted ? '🔊 Unmute' : '🔇 Mute';
+  });
+
+  // ── Progress bar ──────────────────────────────────────────────
+  function fmtTime(s) {
+    const m = Math.floor(s / 60);
+    const sec = Math.floor(s % 60).toString().padStart(2, '0');
+    return `${m}:${sec}`;
+  }
+
+  function updateProgress() {
+    const dur = v1.duration || 0;
+    const cur = v1.currentTime;
+    const pct = dur ? (cur / dur) : 0;
+    progress.value = Math.round(pct * 1000);
+    progress.style.setProperty('--progress', (pct * 100).toFixed(2) + '%');
+    timeDisp.textContent = `${fmtTime(cur)} / ${fmtTime(dur)}`;
+  }
+
+  progress.addEventListener('input', () => {
+    const pct = progress.value / 1000;
+    const t = (v1.duration || 0) * pct;
+    v1.currentTime = t;
+    v2.currentTime = t;
+  });
+
+  // ── Auto-oscillate ────────────────────────────────────────────
+  const btnOsc = document.getElementById('btnOscillate');
+  let oscActive = false;
+  let oscRaf = null;
+  let oscStart = null;
+  const OSC_PERIOD = 1800; // ms for one full left→right→left cycle
+  const OSC_MIN = 15;
+  const OSC_MAX = 85;
+
+  function oscTick(ts) {
+    if (!oscActive) return;
+    if (!oscStart) oscStart = ts;
+    const elapsed = (ts - oscStart) % OSC_PERIOD;
+    // sine wave: 0→1→0 over one period, mapped to OSC_MIN–OSC_MAX
+    const t = elapsed / OSC_PERIOD;           // 0..1
+    const s = 0.5 - 0.5 * Math.cos(2 * Math.PI * t); // 0..1 smooth
+    applySlider(OSC_MIN + s * (OSC_MAX - OSC_MIN));
+    oscRaf = requestAnimationFrame(oscTick);
+  }
+
+  btnOsc.addEventListener('click', () => {
+    oscActive = !oscActive;
+    if (oscActive) {
+      oscStart = null;
+      btnOsc.textContent = '⏹ Stop Auto';
+      btnOsc.style.borderColor = '#c8a96e';
+      oscRaf = requestAnimationFrame(oscTick);
+    } else {
+      cancelAnimationFrame(oscRaf);
+      btnOsc.textContent = '⇄ Auto';
+      btnOsc.style.borderColor = '';
+    }
+  });
+
+  // Stop oscillation when user manually drags
+  box.addEventListener('pointerdown', () => {
+    if (oscActive) {
+      oscActive = false;
+      cancelAnimationFrame(oscRaf);
+      btnOsc.textContent = '⇄ Auto';
+      btnOsc.style.borderColor = '';
+    }
+  });
+
+  // ── File pickers ──────────────────────────────────────────────
+  document.getElementById('fileOriginal').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    v1.src = url;
+    v1.load();
+  });
+
+  document.getElementById('fileColorized').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    v2.src = url;
+    v2.load();
+  });
+
+  // ── Auto-play on load ─────────────────────────────────────────
+  Promise.all([
+    v1.play().catch(() => {}),
+    v2.play().catch(() => {}),
+  ]).then(() => {
+    btnPP.textContent = '⏸ Pause';
+  });
+</script>
+</body>
+</html>
