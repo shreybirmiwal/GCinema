@@ -83,17 +83,16 @@ for SCENE_DIR in "${SCENE_DIRS[@]}"; do
         continue
     fi
 
-    # Compute shortest valid duration for the API (Veo minimum is 5s)
+    # Compute target duration for the API (Grok Imagine supports 1-15s)
     CLIP_DUR=$(ffprobe -v error -show_entries format=duration \
         -of default=noprint_wrappers=1:nokey=1 "$ORIGINAL_CLIP" 2>/dev/null | awk '{printf "%d", int($1)+1}')
     TARGET_DUR=$(( CLIP_DUR > 5 ? CLIP_DUR : 5 ))
     echo "  Clip duration: ${CLIP_DUR}s → requesting ${TARGET_DUR}s from video API"
 
     GENERATED="$SCENE_DIR/frame0_colorized_generated.mp4"
-    echo "  [5] Generate video from keyframe + description..."
+    echo "  [5] Generate video from keyframe + description (Grok Imagine)..."
     python3 "$SCRIPT_DIR/../video/5-video-gen.py" \
         "$COLORIZED" "$DESCRIPTION" \
-        --api-key "$API_KEY" \
         --duration "$TARGET_DUR" \
         --output "$GENERATED"
 

@@ -96,12 +96,11 @@ CLIP_DUR=$(ffprobe -v error -show_entries format=duration \
 TARGET_DUR=$(( CLIP_DUR > 5 ? CLIP_DUR : 5 ))
 if [[ -f "$SCENE_DIR/description.txt" ]]; then
     PROMPT_SNIPPET="$(head -1 "$SCENE_DIR/description.txt" | cut -c1-72)"
-    log "Prompt → Veo: \"${PROMPT_SNIPPET}...\""
+    log "Prompt → Grok Imagine: \"${PROMPT_SNIPPET}...\""
 fi
 log "Generating colorized video (${TARGET_DUR}s target)..."
 python3 "$VIDEO_DIR/5-video-gen.py" \
     "$SCENE_DIR/frame0_colorized.jpg" "$SCENE_DIR/description.txt" \
-    --api-key "$API_KEY" \
     --duration "$TARGET_DUR" \
     --output "$SCENE_DIR/frame0_colorized_generated.mp4" >> "$LOG_FILE" 2>&1 \
     || fail "Video generation failed"
