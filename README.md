@@ -72,7 +72,7 @@ The black-and-white `frame0.png` is sent to Gemini's image generation model (gem
 The colorized keyframe + scene description are fed into xAI's **Grok Imagine Video** (`grok-imagine-video`) to produce a full colorized clip. The image is sent as a base64 data URI for image-to-video generation at 720p with configurable duration (1–15 seconds). The model is instructed to produce silent visuals only (audio is handled separately). Output: `frame0_colorized_generated.mp4`.
 
 **Step 6 — Duration matching** (`video/6-match-video-length.py`)
-AI-generated video clips have a fixed duration (e.g. 6s from Veo) that rarely matches the original scene length. ffmpeg's `setpts` filter time-stretches or compresses the generated clip to exactly match the original clip's duration. Output: `frame0_colorized_generated_matched.mp4`.
+AI-generated video clips have a fixed duration (Grok Imagine outputs 1–15s) that rarely matches the original scene length. ffmpeg's `setpts` filter time-stretches or compresses the generated clip to exactly match the original clip's duration. Output: `frame0_colorized_generated_matched.mp4`.
 
 ---
 
