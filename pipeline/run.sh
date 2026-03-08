@@ -183,6 +183,77 @@ log_error() {
     printf '  %b✘%b  %s\n' "$FG_RED$BOLD" "$RST" "$msg" >&2
 }
 
+# show_gemini_prompt <model> <purpose>
+# Reads prompt text from stdin and renders a styled box
+show_gemini_prompt() {
+    local model="$1" purpose="$2"
+    local cols
+    cols=$(tput cols 2>/dev/null || echo 90)
+    local inner=$(( cols - 8 ))
+    printf '\n'
+    printf '  %b┌─ ✦ PROMPT → GEMINI%b  %b%s%b  %b[%s]%b\n' \
+        "$FG_BLUE$BOLD" "$RST" \
+        "$FG_BLUE" "$purpose" "$RST" \
+        "$FG_GRAY$DIM" "$model" "$RST"
+    local line
+    while IFS= read -r line; do
+        [[ -z "$line" ]] && { printf '  %b│%b\n' "$FG_BLUE$DIM" "$RST"; continue; }
+        printf '  %b│%b  %b%s%b\n' "$FG_BLUE" "$RST" "$FG_GRAY$ITALIC" \
+            "$(truncate_str "$line" "$inner")" "$RST"
+    done
+    printf '  %b└────────────────────────────────────────%b\n' "$FG_BLUE$DIM" "$RST"
+    printf '\n'
+}
+
+# show_gemini_response <purpose> [max_lines]
+# Reads response text from stdin and renders a styled box
+show_gemini_response() {
+    local purpose="$1" max_lines="${2:-18}"
+    local cols
+    cols=$(tput cols 2>/dev/null || echo 90)
+    local inner=$(( cols - 8 ))
+    printf '\n'
+    printf '  %b┌─ ✦ GEMINI RESPONSE%b  %b%s%b\n' \
+        "$FG_BGREEN$BOLD" "$RST" "$FG_BGREEN" "$purpose" "$RST"
+    local line count=0
+    while IFS= read -r line && (( count < max_lines )); do
+        [[ -z "$line" ]] && continue
+        printf '  %b│%b  %b%s%b\n' "$FG_BGREEN" "$RST" "$FG_WHITE" \
+            "$(truncate_str "$line" "$inner")" "$RST"
+        (( count++ ))
+    done
+    printf '  %b└────────────────────────────────────────%b\n' "$FG_BGREEN$DIM" "$RST"
+    printf '\n'
+}
+
+# show_audio_events_preview <json_file> [max_events]
+# Pretty-prints the first N audio events from an S1 JSON events file
+show_audio_events_preview() {
+    local events_file="$1" max_events="${2:-10}"
+    [[ ! -f "$events_file" ]] && return
+    printf '  %b┌─ ✦ AUDIO EVENTS PREVIEW%b\n' "$FG_AMBER$BOLD" "$RST"
+    python3 - "$events_file" "$max_events" <<'PYEOF' 2>/dev/null | \
+        while IFS= read -r line; do
+            printf '  \033[38;5;214m│\033[0m  %s\n' "$line"
+        done
+import json, sys
+path, n = sys.argv[1], int(sys.argv[2])
+events = json.load(open(path))[:n]
+for e in events:
+    ts = e.get('timestamp_sec', 0)
+    kind = e.get('type', '?')
+    if kind == 'speech':
+        char = e.get('character', '?')
+        utt  = e.get('utterance', '')
+        print(f"[{ts:>6.2f}s]  SPEECH  {char:<20}  \"{utt}\"")
+    else:
+        desc = e.get('description', '?')
+        print(f"[{ts:>6.2f}s]  SFX     {desc}")
+PYEOF
+    printf '  %b└────────────────────────────────────────%b\n' "$FG_AMBER$DIM" "$RST"
+    printf '\n'
+}
+
 # Number input selection. Returns selected index (0-based) via global SEL_RESULT.
 # Usage: number_select "Prompt" option1 option2 ... [--disabled N]
 # Disabled indices are not shown as selectable.
@@ -326,11 +397,39 @@ mkdir -p "$CLIPS_DIR"
 
 log_step "▶" "Splitting video into scene clips..."
 log_detail "Running: 1-segment-gemini.py"
+
+show_gemini_prompt "gemini-3.1-pro-preview" "Scene Cut Detection" <<'GEMINI_EOF'
+Watch this video carefully and identify every single moment where the camera
+cuts to a different shot or angle. This includes:
+
+  - Hard cuts between completely different scenes or locations
+  - Back-and-forth dialogue cuts (even rapid ones — each cut counts)
+  - Reaction shot cuts (cut away to listener, then back to speaker)
+  - Any other camera angle change or shot change
+
+Do NOT mark pans, tilts, or zooms within the same continuous shot.
+
+Return ONLY a JSON object in this exact format, with no extra commentary:
+  { "cuts": [4.2, 9.7, 14.1, 19.8] }
+
+Each number is the timestamp in seconds where a new shot begins.
+The first shot always starts at 0.0, so do NOT include 0.0 in the list.
+If there are no cuts at all, return: {"cuts": []}
+GEMINI_EOF
+
+SEG_OUTPUT_FILE="$(mktemp)"
 python3 "$SCRIPT_DIR/../video/1-segment-gemini.py" "$VIDEO" \
     --api-key "$API_KEY" \
-    --output-dir "$CLIPS_DIR" 2>&1 | while IFS= read -r line; do
+    --output-dir "$CLIPS_DIR" 2>&1 | tee "$SEG_OUTPUT_FILE" | while IFS= read -r line; do
     log_detail "$line"
 done
+
+# Show the detected cuts as a Gemini response panel
+CUTS_PREVIEW="$(grep -E 'Scene|cut|Detected|sidecar' "$SEG_OUTPUT_FILE" 2>/dev/null | head -20)"
+if [[ -n "$CUTS_PREVIEW" ]]; then
+    show_gemini_response "Scene Cut Timestamps" <<< "$CUTS_PREVIEW"
+fi
+rm -f "$SEG_OUTPUT_FILE"
 
 CLIPS=()
 while IFS= read -r line; do
@@ -347,11 +446,37 @@ printf '\n'
 log_step "▶" "Generating master color guide (full film analysis)..."
 log_detail "Running: 4a-color-guide.py"
 COLOR_GUIDE="$OUTPUT_DIR/color_guide.txt"
+
+show_gemini_prompt "gemini-3.1-pro-preview" "Master Color Guide" <<'GEMINI_EOF'
+Watch this entire black-and-white film and produce a master color guide
+that will be used to consistently colorize every scene.
+
+For every recurring character, object, animal, and environment you can
+identify, specify exact, actionable colors. Examples of detail expected:
+  - "Main character (man in suit): charcoal grey pinstripe suit, white
+    dress shirt, burgundy tie, warm olive complexion, dark brown hair"
+  - "Lion: tawny orange-gold fur, pale cream belly, amber eyes"
+  - "Interior parlor: cream walls, mahogany furniture, Persian rug in
+    deep reds and golds"
+  - "Exterior street: grey cobblestones, brown brick buildings, overcast
+    cool daylight"
+
+Also note the overall lighting mood for day/night/interior scenes and any
+consistent color temperature (warm golden afternoons, cool blue nights).
+
+Be specific — "dusty rose" not "pink", "tawny orange-gold" not "yellow".
+Return only the color guide as plain descriptive text, no markdown headers.
+GEMINI_EOF
+
 python3 "$SCRIPT_DIR/../video/4a-color-guide.py" "$VIDEO" \
     --api-key "$API_KEY" \
     --output "$COLOR_GUIDE" 2>&1 | while IFS= read -r line; do
     log_detail "$line"
 done
+
+if [[ -f "$COLOR_GUIDE" ]]; then
+    show_gemini_response "Master Color Guide" 20 < "$COLOR_GUIDE"
+fi
 log_success "Color guide saved"
 
 printf '\n'
@@ -600,6 +725,26 @@ for sd in "${SCENE_DIRS[@]}"; do
 done
 log_success "Phase 2 complete — $DONE_SCENES/$NUM_SCENES scenes processed"
 printf '\n'
+
+# Show Gemini scene descriptions for each completed scene
+if (( DONE_SCENES > 0 )); then
+    printf '  %b◆ Gemini Scene Descriptions:%b\n' "$FG_MAGENTA$BOLD" "$RST"
+    printf '\n'
+    for sd in "${SCENE_DIRS[@]}"; do
+        sl="$(basename "$sd")"
+        stage="$(cat "$sd/.stage" 2>/dev/null || echo "")"
+        if [[ "$stage" == "done" && -f "$sd/description.txt" ]]; then
+            printf '  %b── %s%b\n' "$FG_MAGENTA" "$sl" "$RST"
+            head -5 "$sd/description.txt" | while IFS= read -r dline; do
+                [[ -z "$dline" ]] && continue
+                printf '  %b  %s%b\n' "$FG_GRAY$ITALIC" \
+                    "$(truncate_str "$dline" $(( $(tput cols 2>/dev/null || echo 90) - 6 )))" "$RST"
+            done
+            printf '\n'
+        fi
+    done
+fi
+
 sleep 1
 
 WORKER_PIDS=()
@@ -632,12 +777,41 @@ log_step "♫" "S1 — Gemini: video analysis → music prompt + audio events"
 if [[ -z "${GEMINI_API_KEY:-}" ]]; then
     log_error "GEMINI_API_KEY not found in .env — skipping audio"
 else
+    show_gemini_prompt "gemini-2.0-flash" "Silent Film Audio Design (2 passes)" <<'GEMINI_EOF'
+Pass 1 — Character Identification:
+  Identify every character who appears in this clip.
+  Return a JSON array with: id, description, gender, role, approximate_age.
+
+Pass 2 — Full Audio Soundscape:
+  You are an expert silent-film sound designer restoring a classic film.
+  INVENT the full soundscape AND dialogue as a 1920s restoration team would.
+
+  Generate two things:
+  1. "music_prompt" — 2-5 sentences describing the ideal background music
+     (genre, tempo, instruments, mood arc across the clip)
+
+  2. "audio_events" — 20+ chronological sound moments including:
+     - SPEECH: invent real dialogue matching character expressions
+       ("Watch out!", "Oh my goodness!", "Ha! Take that!", "Are you alright?")
+       Never use "..." — always write actual words. Mark as high/medium confidence.
+     - SFX: footsteps, impacts, ambience, object interactions, crowd reactions
+
+  Return only raw JSON: { "music_prompt": "...", "audio_events": [...] }
+GEMINI_EOF
+
     python3 "$AUDIO_DIR/S1-sound-gen-prompt.py" "$VIDEO" \
         --output-music "$MUSIC_PROMPT" \
         --output-lipsync "$AUDIO_EVENTS" \
         --api-key "$API_KEY" 2>&1 | while IFS= read -r line; do
         log_detail "$line"
     done
+
+    if [[ -f "$MUSIC_PROMPT" ]]; then
+        show_gemini_response "Music Composition Prompt" 10 < "$MUSIC_PROMPT"
+    fi
+    if [[ -f "$AUDIO_EVENTS" ]]; then
+        show_audio_events_preview "$AUDIO_EVENTS" 12
+    fi
     log_success "Music prompt and audio events generated"
 
     printf '\n'
