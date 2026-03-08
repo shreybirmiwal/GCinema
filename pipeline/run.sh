@@ -5,6 +5,7 @@
 # audio pipeline, assembly, and localhost viewer.
 #
 # Usage: ./run.sh
+#   AUDIO_LANGUAGE=Spanish ./run.sh   # default to Spanish dub without prompting
 set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -267,7 +268,7 @@ SEL_RESULT=0
 number_select() {
     local prompt="$1"; shift
     local -a options=()
-    local -a disabled=()
+    local -a disabled=(-1)
     local parsing_disabled=false
 
     for arg in "$@"; do
@@ -382,9 +383,40 @@ CLIPS_DIR="$OUTPUT_DIR/clips"
 
 clear
 printf '\n'
-printf '  %b▸ Selected:%b %b%s%b\n' "$FG_CYAN" "$RST" "$BOLD" "$STEM.mp4" "$RST"
+printf '  %b▸ Video:%b  %b%s%b\n' "$FG_CYAN" "$RST" "$BOLD" "$STEM.mp4" "$RST"
 printf '\n'
-sleep 0.5
+sleep 0.3
+
+# ── Language dub selection ────────────────────────────────────────────────
+AUDIO_LANGUAGE_LIST=(
+    "English"
+    "Spanish    (Español)"
+    "French     (Français)"
+    "German     (Deutsch)"
+    "Italian    (Italiano)"
+    "Portuguese (Português)"
+    "Hindi      (हिन्दी)"
+    "Japanese   (日本語)"
+    "Chinese    (中文)"
+    "Korean     (한국어)"
+    "Arabic     (العربية)"
+    "Russian    (Русский)"
+)
+AUDIO_LANGUAGE_KEYS=(English Spanish French German Italian Portuguese Hindi Japanese Chinese Korean Arabic Russian)
+
+if [[ -n "${AUDIO_LANGUAGE:-}" ]]; then
+    DUB_LANG="$AUDIO_LANGUAGE"
+else
+    number_select "Select language for audio dub" "${AUDIO_LANGUAGE_LIST[@]}"
+    DUB_LANG="${AUDIO_LANGUAGE_KEYS[$SEL_RESULT]}"
+fi
+
+clear
+printf '\n'
+printf '  %b▸ Video:%b    %b%s%b\n' "$FG_CYAN" "$RST" "$BOLD" "$STEM.mp4" "$RST"
+printf '  %b▸ Language:%b %b%s%b\n' "$FG_CYAN" "$RST" "$BOLD" "$DUB_LANG" "$RST"
+printf '\n'
+sleep 0.8
 
 # Validate environment
 if [[ -z "${GEMINI_API_KEY:-}" ]]; then
@@ -759,7 +791,7 @@ WORKER_PIDS=()
 # PHASE 3: Audio Pipeline
 # ═════════════════════════════════════════════════════════════════════════════
 
-phase_header "3" "AUDIO PIPELINE — Generating soundtrack" "$FG_BLUE"
+phase_header "3" "AUDIO PIPELINE — Generating soundtrack [$DUB_LANG]" "$FG_BLUE"
 
 AUDIO_DIR="$PROJECT_DIR/audio"
 WORK_DIR="$OUTPUT_DIR/audio"
@@ -808,6 +840,7 @@ GEMINI_EOF
     python3 "$AUDIO_DIR/S1-sound-gen-prompt.py" "$VIDEO" \
         --output-music "$MUSIC_PROMPT" \
         --output-lipsync "$AUDIO_EVENTS" \
+        --language "$DUB_LANG" \
         --api-key "$API_KEY" 2>&1 | while IFS= read -r line; do
         log_detail "$line"
     done
@@ -840,6 +873,7 @@ GEMINI_EOF
         python3 "$AUDIO_DIR/S3-vocal-gen.py" "$AUDIO_EVENTS" \
             --output "$FOLEY_WAV" \
             --duration "$DURATION" \
+            --language "$DUB_LANG" \
             --api-key "$ELEVENLABS_API_KEY" 2>&1 | while IFS= read -r line; do
             log_detail "$line"
         done
@@ -949,13 +983,14 @@ printf '    PIPELINE COMPLETE\n'
 printf '  ═══════════════════════════════════════════════════════════════\n'
 printf '%b' "$RST"
 printf '\n'
-printf '  %bVideo:%b   %s\n' "$FG_CYAN" "$RST" "${FINAL_VIDEO:-N/A}"
-printf '  %bScenes:%b  %d processed\n' "$FG_CYAN" "$RST" "$DONE_SCENES"
-printf '  %bTime:%b    %02d:%02d\n' "$FG_CYAN" "$RST" "$TOTAL_M" "$TOTAL_S"
+printf '  %bVideo:%b      %s\n' "$FG_CYAN" "$RST" "${FINAL_VIDEO:-N/A}"
+printf '  %bLanguage:%b   %s\n' "$FG_CYAN" "$RST" "$DUB_LANG"
+printf '  %bScenes:%b     %d processed\n' "$FG_CYAN" "$RST" "$DONE_SCENES"
+printf '  %bTime:%b       %02d:%02d\n' "$FG_CYAN" "$RST" "$TOTAL_M" "$TOTAL_S"
 
 if [[ -f "${FINAL_VIDEO:-}" ]]; then
     FSIZE=$(du -h "$FINAL_VIDEO" 2>/dev/null | awk '{print $1}')
-    printf '  %bSize:%b    %s\n' "$FG_CYAN" "$RST" "$FSIZE"
+    printf '  %bSize:%b       %s\n' "$FG_CYAN" "$RST" "$FSIZE"
 fi
 
 printf '\n'

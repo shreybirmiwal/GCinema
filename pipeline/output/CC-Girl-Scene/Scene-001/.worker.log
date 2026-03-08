@@ -1,21 +1,26 @@
-[Scene-001] Analyzing scene content with Gemini...
+[Scene-001] Prompt → Gemini: Describe every action, movement, emotion, and
+[Scene-001]   environment in exhaustive detail for a video generation AI (400+ words).
 Uploading /Users/shreybirmiwal/projects/GCinema/pipeline/output/CC-Girl-Scene/Scene-001/clip.mp4 ...
   Waiting for Gemini to process video ...
-Upload complete: https://generativelanguage.googleapis.com/v1beta/files/fdcnvwdjauyy
+Upload complete: https://generativelanguage.googleapis.com/v1beta/files/j9dadjyjghnc
 Generating description with gemini-3.1-pro-preview ...
 Description written to: /Users/shreybirmiwal/projects/GCinema/pipeline/output/CC-Girl-Scene/Scene-001/description.txt
+[Scene-001] Gemini: "A man in a light shirt, dark vest, and loose trousers sprints frantically away a..."
 [Scene-001] Description saved.
 [Scene-001] Extracting first frame as keyframe...
 Frame saved to: /Users/shreybirmiwal/projects/GCinema/pipeline/output/CC-Girl-Scene/Scene-001/frame0.png
 [Scene-001] Keyframe saved: frame0.png
-[Scene-001] Colorizing keyframe with Gemini...
+[Scene-001] Prompt → Gemini: Add natural, realistic color to this black and white
+[Scene-001]   image. Keep it subtle and grounded — do not over-saturate.
+[Scene-001] Colorizing keyframe with Gemini Image...
 Input:     /Users/shreybirmiwal/projects/GCinema/pipeline/output/CC-Girl-Scene/Scene-001/frame0.png
 Input2:    (none)
 Reference: (none)
 Model:     gemini-3.1-flash-image-preview
 Colorizing ...
 Colorized image saved to: /Users/shreybirmiwal/projects/GCinema/pipeline/output/CC-Girl-Scene/Scene-001/frame0_colorized.jpg
-[Scene-001] Colorized keyframe saved.
+[Scene-001] Gemini: [image generated] → frame0_colorized.jpg saved.
+[Scene-001] Prompt → Veo: "A man in a light shirt, dark vest, and loose trousers sprints franticall..."
 [Scene-001] Generating colorized video (5s target)...
 Image:       /Users/shreybirmiwal/projects/GCinema/pipeline/output/CC-Girl-Scene/Scene-001/frame0_colorized.jpg
 Description: /Users/shreybirmiwal/projects/GCinema/pipeline/output/CC-Girl-Scene/Scene-001/description.txt
@@ -23,93 +28,5 @@ Backend:     auto
 Duration:    5s
 Output:      /Users/shreybirmiwal/projects/GCinema/pipeline/output/CC-Girl-Scene/Scene-001/frame0_colorized_generated.mp4
 Generating via Veo (veo-3.1-generate-preview) ...
-Waiting for Veo to generate video..Warning: Veo content filter blocked generation (filtered=1): ["Sorry, we can't create videos with real people's names or likenesses. Please remove the celebrity reference and try again."]
-
-Falling back to Kling ...
-Uploading image to fal.ai ...
-Calling Kling v3 Pro image-to-video (5s) ...
-Downloading Kling video ...
+Waiting for Veo to generate video......
 Video saved to: /Users/shreybirmiwal/projects/GCinema/pipeline/output/CC-Girl-Scene/Scene-001/frame0_colorized_generated.mp4
-[Scene-001] Generated video saved.
-[Scene-001] Time-stretching to match original clip duration...
-ffmpeg version 8.0 Copyright (c) 2000-2025 the FFmpeg developers
-  built with Apple clang version 17.0.0 (clang-1700.0.13.3)
-  configuration: --prefix=/opt/homebrew/Cellar/ffmpeg/8.0_1 --enable-shared --enable-pthreads --enable-version3 --cc=clang --host-cflags= --host-ldflags='-Wl,-ld_classic' --enable-ffplay --enable-gnutls --enable-gpl --enable-libaom --enable-libaribb24 --enable-libbluray --enable-libdav1d --enable-libharfbuzz --enable-libjxl --enable-libmp3lame --enable-libopus --enable-librav1e --enable-librist --enable-librubberband --enable-libsnappy --enable-libsrt --enable-libssh --enable-libsvtav1 --enable-libtesseract --enable-libtheora --enable-libvidstab --enable-libvmaf --enable-libvorbis --enable-libvpx --enable-libwebp --enable-libx264 --enable-libx265 --enable-libxml2 --enable-libxvid --enable-lzma --enable-libfontconfig --enable-libfreetype --enable-frei0r --enable-libass --enable-libopencore-amrnb --enable-libopencore-amrwb --enable-libopenjpeg --enable-libspeex --enable-libsoxr --enable-libzmq --enable-libzimg --disable-libjack --disable-indev=jack --enable-videotoolbox --enable-audiotoolbox --enable-neon
-  libavutil      60.  8.100 / 60.  8.100
-  libavcodec     62. 11.100 / 62. 11.100
-  libavformat    62.  3.100 / 62.  3.100
-  libavdevice    62.  1.100 / 62.  1.100
-  libavfilter    11.  4.100 / 11.  4.100
-  libswscale      9.  1.100 /  9.  1.100
-  libswresample   6.  1.100 /  6.  1.100
-Input #0, mov,mp4,m4a,3gp,3g2,mj2, from '/Users/shreybirmiwal/projects/GCinema/pipeline/output/CC-Girl-Scene/Scene-001/frame0_colorized_generated.mp4':
-  Metadata:
-    minor_version   : 512
-    major_brand     : isom
-    compatible_brands: isomiso2avc1mp41
-    encoder         : Lavf60.16.100
-  Duration: 00:00:05.04, start: 0.000000, bitrate: 17017 kb/s
-  Stream #0:0[0x1](und): Audio: aac (LC) (mp4a / 0x6134706D), 44100 Hz, stereo, fltp, 128 kb/s (default)
-    Metadata:
-      handler_name    : SoundHandler
-      vendor_id       : [0][0][0][0]
-  Stream #0:1[0x2](und): Video: h264 (Main) (avc1 / 0x31637661), yuv420p(progressive), 1920x1080, 16880 kb/s, 24 fps, 24 tbr, 12288 tbn (default)
-    Metadata:
-      handler_name    : VideoHandler
-      vendor_id       : [0][0][0][0]
-      encoder         : Lavc60.31.102 h264_slapi
-Stream mapping:
-  Stream #0:1 -> #0:0 (h264 (native) -> h264 (libx264))
-  Stream #0:0 -> #0:1 (aac (native) -> aac (native))
-Press [q] to stop, [?] for help
-[h264 @ 0xa6e879880] Late SEI is not implemented. Update your FFmpeg version to the newest one from Git. If the problem still occurs, it means that your file has a feature which has not been implemented.
-[h264 @ 0xa6e879880] If you want to help, upload a sample of this file to https://streams.videolan.org/upload/ and contact the ffmpeg-devel mailing list. (ffmpeg-devel@ffmpeg.org)
-[libx264 @ 0xa6e879180] using cpu capabilities: ARMv8 NEON DotProd I8MM
-[libx264 @ 0xa6e879180] profile High, level 4.0, 4:2:0, 8-bit
-[libx264 @ 0xa6e879180] 264 - core 165 r3222 b35605a - H.264/MPEG-4 AVC codec - Copyleft 2003-2025 - http://www.videolan.org/x264.html - options: cabac=1 ref=3 deblock=1:0:0 analyse=0x3:0x113 me=hex subme=7 psy=1 psy_rd=1.00:0.00 mixed_ref=1 me_range=16 chroma_me=1 trellis=1 8x8dct=1 cqm=0 deadzone=21,11 fast_pskip=1 chroma_qp_offset=-2 threads=21 lookahead_threads=3 sliced_threads=0 nr=0 decimate=1 interlaced=0 bluray_compat=0 constrained_intra=0 bframes=3 b_pyramid=2 b_adapt=1 b_bias=0 direct=1 weightb=1 open_gop=0 weightp=2 keyint=250 keyint_min=24 scenecut=40 intra_refresh=0 rc_lookahead=40 rc=crf mbtree=1 crf=23.0 qcomp=0.60 qpmin=0 qpmax=69 qpstep=4 ip_ratio=1.40 aq=1:1.00
-Output #0, mp4, to '/Users/shreybirmiwal/projects/GCinema/pipeline/output/CC-Girl-Scene/Scene-001/frame0_colorized_generated_matched.mp4':
-  Metadata:
-    minor_version   : 512
-    major_brand     : isom
-    compatible_brands: isomiso2avc1mp41
-    encoder         : Lavf62.3.100
-  Stream #0:0(und): Video: h264 (avc1 / 0x31637661), yuv420p(tv, progressive), 1920x1080, q=2-31, 24 fps, 12288 tbn (default)
-    Metadata:
-      encoder         : Lavc62.11.100 libx264
-      handler_name    : VideoHandler
-      vendor_id       : [0][0][0][0]
-    Side data:
-      cpb: bitrate max/min/avg: 0/0/0 buffer size: 0 vbv_delay: N/A
-  Stream #0:1(und): Audio: aac (LC) (mp4a / 0x6134706D), 44100 Hz, stereo, fltp, 128 kb/s (default)
-    Metadata:
-      encoder         : Lavc62.11.100 aac
-      handler_name    : SoundHandler
-      vendor_id       : [0][0][0][0]
-frame=    1 fps=0.0 q=28.0 size=       0KiB time=N/A bitrate=N/A dup=0 drop=84 speed=N/A elapsed=0:00:00.50    [out#0/mp4 @ 0xa6e87c300] video:989KiB audio:24KiB subtitle:0KiB other streams:0KiB global headers:0KiB muxing overhead: 0.250317%
-frame=   38 fps=0.0 q=-1.0 Lsize=    1016KiB time=00:00:01.50 bitrate=5547.1kbits/s dup=0 drop=84 speed= 1.6x elapsed=0:00:00.93    
-[libx264 @ 0xa6e879180] frame I:1     Avg QP:23.65  size: 92870
-[libx264 @ 0xa6e879180] frame P:14    Avg QP:24.99  size: 42623
-[libx264 @ 0xa6e879180] frame B:23    Avg QP:27.17  size: 14034
-[libx264 @ 0xa6e879180] consecutive B-frames: 13.2% 15.8%  7.9% 63.2%
-[libx264 @ 0xa6e879180] mb I  I16..4: 14.4% 72.4% 13.2%
-[libx264 @ 0xa6e879180] mb P  I16..4:  4.3% 12.4%  1.4%  P16..4: 45.3% 17.0%  6.7%  0.0%  0.0%    skip:13.0%
-[libx264 @ 0xa6e879180] mb B  I16..4:  0.9%  2.3%  0.2%  B16..8: 46.3%  4.7%  0.6%  direct: 1.9%  skip:43.0%  L0:38.8% L1:53.6% BI: 7.5%
-[libx264 @ 0xa6e879180] 8x8 transform intra:69.1% inter:83.0%
-[libx264 @ 0xa6e879180] coded y,uvDC,uvAC intra: 62.1% 59.1% 8.3% inter: 21.2% 19.1% 0.0%
-[libx264 @ 0xa6e879180] i16 v,h,dc,p: 51% 18% 10% 21%
-[libx264 @ 0xa6e879180] i8 v,h,dc,ddl,ddr,vr,hd,vl,hu: 30% 20% 16%  4%  6%  7%  6%  6%  7%
-[libx264 @ 0xa6e879180] i4 v,h,dc,ddl,ddr,vr,hd,vl,hu: 42% 16% 11%  4%  7%  7%  5%  5%  3%
-[libx264 @ 0xa6e879180] i8c dc,h,v,p: 46% 21% 28%  5%
-[libx264 @ 0xa6e879180] Weighted P-Frames: Y:7.1% UV:7.1%
-[libx264 @ 0xa6e879180] ref P L0: 62.2% 26.6%  7.7%  3.3%  0.2%
-[libx264 @ 0xa6e879180] ref B L0: 96.5%  2.9%  0.6%
-[libx264 @ 0xa6e879180] ref B L1: 99.2%  0.8%
-[libx264 @ 0xa6e879180] kb/s:5115.10
-[aac @ 0xa6ec15180] Qavg: 349.422
-Original duration:   1.500s
-Colorized duration:  5.042s
-PTS factor:          0.2975x  (target: 1.500s)
-Running: ffmpeg -y -i /Users/shreybirmiwal/projects/GCinema/pipeline/output/CC-Girl-Scene/Scene-001/frame0_colorized_generated.mp4 -vf setpts=0.297521*PTS -af atempo=2.0,atempo=1.680556 /Users/shreybirmiwal/projects/GCinema/pipeline/output/CC-Girl-Scene/Scene-001/frame0_colorized_generated_matched.mp4
-Output saved to: /Users/shreybirmiwal/projects/GCinema/pipeline/output/CC-Girl-Scene/Scene-001/frame0_colorized_generated_matched.mp4
-[Scene-001] Matched video saved.
-[Scene-001] All steps complete!

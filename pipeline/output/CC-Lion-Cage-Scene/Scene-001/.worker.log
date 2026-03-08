@@ -1,0 +1,21 @@
+[Scene-001] Prompt → Gemini: Describe every action, movement, emotion, and
+[Scene-001]   environment in exhaustive detail for a video generation AI (400+ words).
+Uploading /Users/shreybirmiwal/projects/GCinema/pipeline/output/CC-Lion-Cage-Scene/Scene-001/clip.mp4 ...
+  Waiting for Gemini to process video ...
+Upload complete: https://generativelanguage.googleapis.com/v1beta/files/sv0izcoa6t3d
+Generating description with gemini-3.1-pro-preview ...
+Description written to: /Users/shreybirmiwal/projects/GCinema/pipeline/output/CC-Lion-Cage-Scene/Scene-001/description.txt
+[Scene-001] Gemini: "A man wearing a light shirt dark trousers with suspenders and a bowler hat climb..."
+[Scene-001] Description saved.
+[Scene-001] Extracting first frame as keyframe...
+Frame saved to: /Users/shreybirmiwal/projects/GCinema/pipeline/output/CC-Lion-Cage-Scene/Scene-001/frame0.png
+[Scene-001] Keyframe saved: frame0.png
+[Scene-001] Prompt → Gemini: Add natural, realistic color to this black and white
+[Scene-001]   image. Keep it subtle and grounded — do not over-saturate.
+[Scene-001] Colorizing keyframe with Gemini Image...
+Input:     /Users/shreybirmiwal/projects/GCinema/pipeline/output/CC-Lion-Cage-Scene/Scene-001/frame0.png
+Input2:    (none)
+Reference: (none)
+Model:     gemini-3.1-flash-image-preview
+Colorizing ...
+Colorized image saved to: /Users/shreybirmiwal/projects/GCinema/pipeline/output/CC-Lion-Cage-Scene/Scene-001/frame0_colorized.jpg

@@ -1,11 +1,15 @@
-Main character (man with mustache): crisp white dress shirt with rolled-up sleeves, charcoal grey vest, dusty taupe brown baggy trousers, fair pale complexion, jet black hair and mustache.
-Lion: tawny golden-brown fur, darker rich amber-brown mane, pale cream muzzle and underbelly.
-Mule (briefly seen): dark chestnut brown coat.
-Circus wagon exterior: deep crimson red painted wood with faded metallic gold decorative painted flourishes.
-Wagon bars: dull iron grey.
-Wagon undercarriage and wheels: weathered medium brown wooden spokes with dark iron grey rims.
-Cage interior: shadowed dark brown wooden back wall and floor.
-Ladder: weathered pale beige unpainted wood.
-Signage ("DANGEROUS"): stark white board with bold black lettering.
-Exterior ground: dusty pale tan dirt and sand.
-Overall lighting mood: crisp, neutral, bright daytime sunlight with strong, distinct shadows.
+Main character (man): pale complexion, black hair and mustache, off-white shirt with rolled-up sleeves, dark charcoal grey vest, dark dusty brown baggy trousers, black suspenders, black shoes
+
+Lion: tawny golden-brown fur, pale cream belly and paws, darker amber-brown mane
+
+Donkey: dark charcoal grey coat, lighter grey muzzle
+
+Circus wagon exterior: faded deep crimson red wooden body, ornate white painted scrollwork, dark iron-grey metal cage bars, weathered light grey-brown wooden entry steps, black spoked wheels
+
+Circus wagon interior: warm medium brown wooden paneled back wall, dark stained wooden interior door, dusty pale grey-brown wooden floorboards
+
+Sign: slightly yellowed white background with bold faded red 'DANGEROUS' lettering
+
+Exterior environment: pale sandy brown dirt ground
+
+Lighting mood: Exterior scenes feature bright, warm sunny daylight. Interior cage scenes are lit by neutral, slightly diffused daylight coming through the bars, resulting in softer shadows.
