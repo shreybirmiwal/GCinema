@@ -17,10 +17,10 @@ Input: black-and-white .mp4
         │     ├── Step 2: Gemini describes the scene in detail
         │     ├── Step 3: Extract first frame as keyframe image
         │     ├── Step 4: Colorize the keyframe (Gemini image generation)
-        │     ├── Step 5: Generate a full colorized video clip (Grok Imagine Video)
+        │     ├── Step 5: Generate a full colorized video clip (Veo / Kling / Wan)
         │     └── Step 6: Time-stretch clip to match original duration
         │
-        ├── Phase 3: Audio Pipeline  (supports language dubbing)
+        ├── Phase 3: Audio Pipeline
         │     ├── S1: Gemini analyzes video → music prompt + timestamped audio events
         │     ├── S2: Gemini Lyria generates background music score
         │     ├── S3: ElevenLabs generates speech and sound effects at timestamps
@@ -69,10 +69,15 @@ ffmpeg pulls the very first frame of the clip as a PNG image (`frame0.png`). Thi
 The black-and-white `frame0.png` is sent to Gemini's image generation model (gemini-3.1-flash-image-preview). The model colorizes it with natural, realistic colors. For every scene after the first, the previous scene's already-colorized frame is passed as a reference image, ensuring color consistency across scenes (same skin tones, clothing colors, and environment palette). Saved as `frame0_colorized.jpg`.
 
 **Step 5 — Video generation** (`video/5-video-gen.py`)
-The colorized keyframe + scene description are fed into xAI's **Grok Imagine Video** (`grok-imagine-video`) to produce a full colorized clip. The image is sent as a base64 data URI for image-to-video generation at 720p with configurable duration (1–15 seconds). The model is instructed to produce silent visuals only (audio is handled separately). Grok Imagine Video support is verified working. Output: `frame0_colorized_generated.mp4`.
+The colorized keyframe + scene description are fed into a video generation model to produce a full colorized clip. Three backends are tried in order:
+- **Veo 3.1** (Google) — highest quality, primary backend
+- **Kling v3 Pro** (fal.ai) — fallback if Veo's content filter blocks the clip
+- **Wan 2.2 Turbo** (fal.ai) — final fallback, cheapest and fastest
+
+The model is instructed to produce silent visuals only (audio is handled separately). Output: `frame0_colorized_generated.mp4`.
 
 **Step 6 — Duration matching** (`video/6-match-video-length.py`)
-AI-generated video clips have a fixed duration (Grok Imagine outputs 1–15s) that rarely matches the original scene length. ffmpeg's `setpts` filter time-stretches or compresses the generated clip to exactly match the original clip's duration. Output: `frame0_colorized_generated_matched.mp4`.
+AI-generated video clips have a fixed duration (e.g. 6s from Veo) that rarely matches the original scene length. ffmpeg's `setpts` filter time-stretches or compresses the generated clip to exactly match the original clip's duration. Output: `frame0_colorized_generated_matched.mp4`.
 
 ---
 
@@ -100,21 +105,6 @@ All clips are placed at their timestamps and mixed into a single foley track. Ou
 **S4 — Audio mix** (`audio/S4-mix-audio.py`)
 The background score (`score.wav`) and foley/vocals (`foley.wav`) are mixed together and encoded as a final MP3. Output: `final_audio.mp3`.
 
-### Language Dubbing
-
-The audio pipeline supports dubbing the film into any of 29 languages. When you run `./run.sh`, an interactive menu lets you pick the target language right after selecting the video. This affects two stages:
-
-- **S1** generates all invented dialogue in the target language (Gemini is prompted to write utterances in that language).
-- **S3** passes the matching BCP-47 language code to ElevenLabs multilingual TTS so voices sound native.
-
-Supported languages include English, Spanish, French, German, Italian, Portuguese, Hindi, Japanese, Chinese, Korean, Arabic, Russian, Turkish, Dutch, Swedish, Polish, and more (see `LANGUAGE_CODES` in `audio/S3-vocal-gen.py` for the full list).
-
-To skip the menu and default to a language, set `AUDIO_LANGUAGE` in `pipeline/.env`:
-
-```
-AUDIO_LANGUAGE=Spanish
-```
-
 ---
 
 ## Phase 4: Assembly
@@ -127,20 +117,19 @@ All per-scene `frame0_colorized_generated_matched.mp4` files are sorted and conc
 
 - Python 3.10+
 - ffmpeg
-- `GEMINI_API_KEY` in `pipeline/.env` (required — used for segmentation, reasoning, colorization, and audio analysis)
-- `XAI_API_KEY` in `pipeline/.env` (required — used for video generation via Grok Imagine Video)
+- `GEMINI_API_KEY` in `pipeline/.env` (required — used for segmentation, reasoning, colorization, video generation, and audio analysis)
+- `FAL_KEY` in `pipeline/.env` (optional — enables Kling/Wan fallback for video generation)
 - `ELEVENLABS_API_KEY` in `pipeline/.env` (optional — enables speech and foley generation)
 
 ```
 # pipeline/.env
 GEMINI_API_KEY=your_key_here
-XAI_API_KEY=your_key_here
+FAL_KEY=your_key_here
 ELEVENLABS_API_KEY=your_key_here
-AUDIO_LANGUAGE=English          # optional — skip the language menu (e.g. Spanish, French, Japanese)
 ```
 
 ```
-pip install google-genai pillow elevenlabs pydub requests
+pip install google-genai pillow elevenlabs pydub fal-client
 ```
 
 ---
@@ -152,10 +141,6 @@ cd pipeline
 ./run.sh
 ```
 
-The script walks you through an interactive video picker and language selector, then runs the full pipeline. Output files land in `pipeline/output/<video-stem>/`.
+Output files land in `pipeline/output/<video-stem>/`.
 
-To run only the audio pipeline standalone (e.g. to re-dub an already-colorized film):
-
-```bash
-./pipeline/audio-pipe.sh video.mp4 $GEMINI_API_KEY $ELEVENLABS_API_KEY --language French
-```
+**Video backends:** `main` uses Veo → Kling → Wan. For xAI Grok Imagine Video instead, use the `grok-video` branch.
